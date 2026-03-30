@@ -62,18 +62,18 @@ CREATE POLICY "Service role full access on users" ON public.users FOR ALL USING 
 CREATE POLICY "Service role full access on access_logs" ON public.access_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access on telegram_authorized_users" ON public.telegram_authorized_users FOR ALL USING (true) WITH CHECK (true);
 
--- Policy: Temporarily allow Anon (public) access for Dashboard UI without Auth
-CREATE POLICY "Anon read users" ON public.users FOR SELECT TO anon USING (true);
-CREATE POLICY "Anon insert users" ON public.users FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "Anon update users" ON public.users FOR UPDATE TO anon USING (true);
-CREATE POLICY "Anon delete users" ON public.users FOR DELETE TO anon USING (true);
+-- Policy: Secure access for Dashboard UI (Requires Authentication)
+CREATE POLICY "Authenticated read users" ON public.users FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated insert users" ON public.users FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated update users" ON public.users FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Authenticated delete users" ON public.users FOR DELETE TO authenticated USING (true);
 
-CREATE POLICY "Anon read access_logs" ON public.access_logs FOR SELECT TO anon USING (true);
+CREATE POLICY "Authenticated read access_logs" ON public.access_logs FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Anon read telegram_users" ON public.telegram_authorized_users FOR SELECT TO anon USING (true);
-CREATE POLICY "Anon insert telegram_users" ON public.telegram_authorized_users FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "Anon update telegram_users" ON public.telegram_authorized_users FOR UPDATE TO anon USING (true);
-CREATE POLICY "Anon delete telegram_users" ON public.telegram_authorized_users FOR DELETE TO anon USING (true);
+CREATE POLICY "Authenticated read telegram_users" ON public.telegram_authorized_users FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated insert telegram_users" ON public.telegram_authorized_users FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated update telegram_users" ON public.telegram_authorized_users FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Authenticated delete telegram_users" ON public.telegram_authorized_users FOR DELETE TO authenticated USING (true);
 
 -- ============================================
 -- 6. Enable Realtime for access_logs

@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import { createBrowserClient } from '@/lib/supabase/client';
 
 const navItems = [
   {
@@ -43,7 +44,14 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const supabase = createBrowserClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.replace('/login');
+  };
 
   return (
     <>
@@ -85,7 +93,7 @@ export default function Sidebar() {
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column' }}>
         {/* Logo area */}
         <div
           style={{
@@ -168,13 +176,47 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Footer */}
+        {/* Footer with Sign Out */}
         <div
           style={{
             padding: '16px 20px',
             borderTop: '1px solid var(--border-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
           }}
         >
+          <button
+            onClick={handleSignOut}
+            className="sidebar-link"
+            style={{
+              width: '100%',
+              margin: 0,
+              padding: '10px 12px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: 'none',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}
+            onMouseOver={(e) => {
+               (e.currentTarget as HTMLElement).style.color = 'var(--status-denied)';
+            }}
+            onMouseOut={(e) => {
+               (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Cerrar Sesión</span>
+          </button>
+          
           <div
             style={{
               display: 'flex',
