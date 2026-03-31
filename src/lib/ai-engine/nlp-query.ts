@@ -40,13 +40,13 @@ Notas:
 `;
 
 /**
- * Process a natural language query from Telegram, convert to database query,
+ * Process a natural language query from Telegram (or voice note audio), convert to database query,
  * execute it, and format the results as a human-readable response.
  */
-export async function processNLPQuery(userMessage: string): Promise<string> {
+export async function processNLPQuery(userMessage: string, audioBase64?: string): Promise<string> {
   try {
-    // Step 1: Convert natural language to structured query intent
-    const systemPrompt = `Eres un asistente que convierte preguntas en lenguaje natural a consultas estructuradas para una base de datos de control de acceso.
+    // Step 1: Convert natural language or audio to structured query intent
+    const systemPrompt = `Eres un asistente que convierte peticiones (ya sea en texto o deduciéndolas del audio adjunto) a consultas estructuradas para una base de datos de control de acceso IoT.
 
 ${SCHEMA_DESCRIPTION}
 
@@ -64,6 +64,7 @@ Responde SIEMPRE con un JSON válido con esta estructura:
 }
 
 Reglas:
+- Si recibes un audio adjunto, escúchalo, extrae la intención del usuario y genera el JSON.
 - Para filtros de fecha/hora, usa formato ISO 8601
 - Hoy es ${new Date().toISOString().split('T')[0]}
 - Para "hoy", filtra timestamp >= inicio del día actual en UTC-4
@@ -73,10 +74,13 @@ Reglas:
 - Si la pregunta es sobre usuarios o personas registradas, usa la tabla "users"
 `;
 
-    const queryIntent = await generateJSON<QueryIntent>(userMessage, systemPrompt);
+    // Si no hay texto, forzamos a que interprete la nota de voz
+    const queryPrompt = userMessage || "Por favor escucha la nota de voz adjunta, deduce la consulta, y genera la estructura JSON correcta.";
+
+    const queryIntent = await generateJSON<QueryIntent>(queryPrompt, systemPrompt, audioBase64);
 
     if (!queryIntent) {
-      return '⚠️ No pude entender tu consulta. Intenta reformularla. Ejemplos:\n• "¿Quién entró hoy?"\n• "Muestra los accesos denegados de esta semana"\n• "Lista todos los usuarios"';
+      return '⚠️ No pude entender tu consulta o tu nota de voz. Intenta reformularla. Ejemplos:\n• "¿Quién entró hoy?"\n• "Muestra los accesos denegados de esta semana"\n• "Lista todos los usuarios"';
     }
 
     // Step 2: Build and execute query programmatically (no raw SQL!)
@@ -91,7 +95,7 @@ Reglas:
     }
 
     // Step 3: Format results using LLM
-    const formatPrompt = `El usuario preguntó: "${userMessage}"
+    const formatPrompt = `El usuario solicitó esto (vía texto o voz): "${queryPrompt}"
 
 Resultados de la base de datos (JSON):
 ${JSON.stringify(results, null, 2)}

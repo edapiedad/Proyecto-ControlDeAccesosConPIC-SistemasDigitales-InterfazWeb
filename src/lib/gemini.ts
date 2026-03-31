@@ -58,16 +58,28 @@ export async function generateText(
  */
 export async function generateJSON<T>(
   prompt: string,
-  systemInstruction: string
+  systemInstruction: string,
+  audioBase64?: string
 ): Promise<T | null> {
   const ai = getAI();
 
   const timeoutId = setTimeout(() => {}, TIMEOUT_MS);
 
   try {
+    const contentsObj: any[] = [{ text: prompt }];
+
+    if (audioBase64) {
+      contentsObj.push({
+        inlineData: {
+          data: audioBase64,
+          mimeType: 'audio/ogg',
+        },
+      });
+    }
+
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: prompt,
+      contents: contentsObj,
       config: {
         systemInstruction,
         responseMimeType: 'application/json',

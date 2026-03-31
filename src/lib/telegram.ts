@@ -28,7 +28,8 @@ export function getAuthorizedIdsFromEnv(): number[] {
 export async function sendTelegramMessage(
   chatId: string | number,
   text: string,
-  parseMode: 'HTML' | 'Markdown' | 'MarkdownV2' = 'HTML'
+  parseMode: 'HTML' | 'Markdown' | 'MarkdownV2' = 'HTML',
+  showKeyboard: boolean = true
 ): Promise<boolean> {
   const token = getBotToken();
   const url = `${TELEGRAM_API_BASE}${token}/sendMessage`;
@@ -36,16 +37,30 @@ export async function sendTelegramMessage(
   // Telegram messages have a 4096 character limit
   const truncatedText = text.length > 4000 ? text.substring(0, 4000) + '\n\n⚠️ Mensaje truncado...' : text;
 
+  const payload: any = {
+    chat_id: chatId,
+    text: truncatedText,
+    parse_mode: parseMode,
+  };
+
+  // Activa la botonera persistente en la parte inferior del chat
+  if (showKeyboard) {
+    payload.reply_markup = {
+      keyboard: [
+        [{ text: '/status' }],
+        [{ text: '/start' }, { text: '/myid' }]
+      ],
+      resize_keyboard: true,
+      is_persistent: true
+    };
+  }
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: truncatedText,
-          parse_mode: parseMode,
-        }),
+        body: JSON.stringify(payload),
         signal: AbortSignal.timeout(10000),
       });
 
@@ -90,4 +105,33 @@ export async function sendSecurityAlert(alertText: string): Promise<void> {
   await Promise.allSettled(
     authorizedIds.map((chatId) => sendTelegramMessage(chatId, message))
   );
+}
+
+/**
+ * Fetch a Telegram voice file and return it as a Base64 string for Gemini 2.5
+ */
+export async function getTelegramVoiceAsBase64(fileId: string): Promise<string | null> {
+  const token = getBotToken();
+  try {
+    // 1. Obtener la ruta del archivo OGG desde Telegram
+    const fileRes = await fetch(`${TELEGRAM_API_BASE}${token}/getFile?file_id=${fileId}`);
+    if (!fileRes.ok) return null;
+    
+    const fileData = await fileRes.json();
+    if (!fileData.ok || !fileData.result?.file_path) return null;
+    
+    // 2. Descargar el binario directamente del Content Delivery Network (CDN) oficial
+    const downloadUrl = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`;
+    const downloadRes = await fetch(downloadUrl);
+    
+    if (!downloadRes.ok) return null;
+    
+    // 3. Convertirlo a ArrayBuffer y luego a Codificación Base64
+    const arrayBuffer = await downloadRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    return buffer.toString('base64');
+  } catch (error) {
+    console.error('[Telegram] Error descargando archivo de audio:', error);
+    return null;
+  }
 }

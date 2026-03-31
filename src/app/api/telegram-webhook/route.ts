@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { sendTelegramMessage, getAuthorizedIdsFromEnv } from '@/lib/telegram';
+import { sendTelegramMessage, getAuthorizedIdsFromEnv, getTelegramVoiceAsBase64 } from '@/lib/telegram';
 import { processNLPQuery } from '@/lib/ai-engine/nlp-query';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,11 @@ interface TelegramUpdate {
       type: string;
     };
     text?: string;
+    voice?: {
+      file_id: string;
+      duration: number;
+      mime_type: string;
+    };
     date: number;
   };
 }
@@ -37,15 +42,16 @@ export async function POST(request: NextRequest) {
     }
 
     const message = update.message;
-    if (!message || !message.text) {
-      // Ignore non-text messages
+    if (!message || (!message.text && !message.voice)) {
+      // Ignore non-text and non-voice messages
       return Response.json({ ok: true });
     }
 
     const chatId = message.chat.id;
     const userId = message.from.id;
-    const userText = message.text.trim();
+    const userText = message.text?.trim() || '';
     const userName = message.from.first_name;
+    const voiceFileId = message.voice?.file_id;
 
     // 1. Check authorization — both env-based and database-based
     const isAuthorized = await checkAuthorization(userId);
@@ -58,17 +64,32 @@ export async function POST(request: NextRequest) {
       return Response.json({ ok: true });
     }
 
-    // 2. Handle special commands
+    // 2. Handle special commands (Solo aplican al texto)
     if (userText.startsWith('/')) {
       const response = await handleCommand(userText, userId, userName);
       await sendTelegramMessage(chatId, response);
       return Response.json({ ok: true });
     }
 
-    // 3. Process natural language query
-    await sendTelegramMessage(chatId, '🔍 Procesando tu consulta...');
-    const response = await processNLPQuery(userText);
-    await sendTelegramMessage(chatId, response);
+    // 3. Process natural language query or audio note
+    if (voiceFileId) {
+      await sendTelegramMessage(chatId, '🎙️ <i>Descargando tu nota de voz...</i>', 'HTML', false);
+      const audioBase64 = await getTelegramVoiceAsBase64(voiceFileId);
+      
+      if (!audioBase64) {
+        await sendTelegramMessage(chatId, '❌ Lo siento, no pude procesar el audio debido a un error de red. Por favor, intenta escribir tu consulta.');
+        return Response.json({ ok: true });
+      }
+      
+      await sendTelegramMessage(chatId, '🧠 <i>Procesando audio y ejecutando análisis (IA)...</i>', 'HTML', false);
+      const response = await processNLPQuery('', audioBase64);
+      await sendTelegramMessage(chatId, response);
+      
+    } else if (userText) {
+      await sendTelegramMessage(chatId, '🔍 <i>Procesando tu consulta...</i>', 'HTML', false);
+      const response = await processNLPQuery(userText);
+      await sendTelegramMessage(chatId, response);
+    }
 
     return Response.json({ ok: true });
   } catch (error) {
