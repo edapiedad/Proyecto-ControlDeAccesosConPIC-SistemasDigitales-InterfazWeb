@@ -126,6 +126,70 @@ export type Database = {
         };
         Relationships: [];
       };
+      profiles: {
+        Row: {
+          id: string;
+          telegram_id: number | null;
+          full_name: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          telegram_id?: number | null;
+          full_name?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          telegram_id?: number | null;
+          full_name?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey";
+            columns: ["id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      invitations: {
+        Row: {
+          id: string;
+          token: string;
+          is_used: boolean;
+          expires_at: string;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          token: string;
+          is_used?: boolean;
+          expires_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          token?: string;
+          is_used?: boolean;
+          expires_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
