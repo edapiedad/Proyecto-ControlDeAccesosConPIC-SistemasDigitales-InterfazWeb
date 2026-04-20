@@ -339,3 +339,70 @@ body::before {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================ */
+/* Sidebar & Layout Fixes                       */
+/* ============================================ */
+
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-subtle);
+  display: flex !important;
+  flex-direction: column !important;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 40;
+  transition: transform var(--transition-normal), background-color var(--transition-normal);
+}
+
+.sidebar-link {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 2px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-link:hover {
+  background: rgba(6, 182, 212, 0.05);
+  color: var(--text-primary);
+}
+
+.sidebar-link.active {
+  background: rgba(6, 182, 212, 0.08);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* ============================================ */
+/* Responsive Layout                            */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding: 16px !important;
+  }
+}
+
