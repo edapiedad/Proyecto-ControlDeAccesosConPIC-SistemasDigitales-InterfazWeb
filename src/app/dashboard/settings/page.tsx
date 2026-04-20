@@ -78,10 +78,16 @@ export default function SettingsPage() {
     }
 
     // 2. Actualizar el perfil
+    if (!user) {
+      setMessage({ text: 'No se pudo obtener la información del usuario.', type: 'error' });
+      setIsSaving(false);
+      return;
+    }
+
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ telegram_id: parseInt(telegramId) || null })
-      .eq('id', user?.id);
+      .eq('id', user.id);
 
     if (updateError) {
       setMessage({ text: 'Error al actualizar el ID de Telegram.', type: 'error' });
