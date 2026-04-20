@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, Loader2 } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -201,5 +201,13 @@ export default function RegisterPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>Cargando...</div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }
