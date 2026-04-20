@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -56,7 +57,7 @@ export default function LoginPage() {
       padding: '20px',
       background: 'var(--bg-primary)'
     }}>
-      <div className="glass-card animate-fade-in" style={{
+      <div className="glass-card animate-in" style={{
         width: '100%',
         maxWidth: '430px',
         padding: '40px 32px',
@@ -78,17 +79,17 @@ export default function LoginPage() {
             fontSize: '28px',
             border: '1px solid rgba(6, 182, 212, 0.3)'
           }}>
-            🔐
+            <ShieldCheck size={28} />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-            Autenticación Requerida
+          <h1 className="animate-in animate-in-delay-1" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+            Acceso Autorizado
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Ingresa tus credenciales maestras de administrador
+          <p className="animate-in animate-in-delay-1" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Ingresa tus credenciales de administrador
           </p>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleLogin} className="animate-in animate-in-delay-2" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label htmlFor="email" style={{
               display: 'block',
@@ -150,11 +151,11 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary animate-in animate-in-delay-3"
             style={{ marginTop: '12px', padding: '14px', fontSize: '1rem', fontWeight: 700 }}
             disabled={isLoading}
           >
-            {isLoading ? 'Verificando y Encriptando...' : 'Iniciar Sesión'}
+            {isLoading ? <><Loader2 size={18} className="animate-spin" /> Verificando...</> : 'Iniciar Sesión'}
           </button>
         </form>
       </div>

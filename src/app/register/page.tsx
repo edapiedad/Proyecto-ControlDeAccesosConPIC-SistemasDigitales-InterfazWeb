@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { UserPlus, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const searchParams = useSearchParams();
@@ -56,7 +57,7 @@ export default function RegisterPage() {
       padding: '20px',
       background: 'var(--bg-primary)'
     }}>
-      <div className="glass-card animate-fade-in" style={{
+      <div className="glass-card animate-in" style={{
         width: '100%',
         maxWidth: '430px',
         padding: '40px 32px',
@@ -78,17 +79,17 @@ export default function RegisterPage() {
             fontSize: '28px',
             border: '1px solid rgba(56, 189, 248, 0.3)'
           }}>
-            ✨
+            <UserPlus size={28} />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.5px' }}>
+          <h1 className="animate-in animate-in-delay-1" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.5px' }}>
             Nuevo Administrador
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p className="animate-in animate-in-delay-1" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
             Únete al equipo usando tu clave de invitación
           </p>
         </div>
 
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleRegister} className="animate-in animate-in-delay-2" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label className="form-label">Nombre Completo</label>
             <input
@@ -173,11 +174,11 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary animate-in animate-in-delay-3"
             style={{ marginTop: '10px', padding: '14px', fontSize: '1rem', fontWeight: 700 }}
             disabled={isLoading}
           >
-            {isLoading ? 'Procesando invitación...' : 'Crear Cuenta'}
+            {isLoading ? <><Loader2 size={18} className="animate-spin" /> Procesando invitación...</> : 'Crear Cuenta'}
           </button>
         </form>
 

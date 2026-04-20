@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/server';
 import AccessLogsTable from '@/components/AccessLogsTable';
+import { ClipboardList, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,37 +48,37 @@ export default async function DashboardPage() {
     {
       label: 'Accesos Hoy',
       value: totalToday ?? 0,
-      icon: '📋',
+      icon: <ClipboardList size={24} />,
       color: 'var(--accent-cyan)',
       bgColor: 'rgba(6, 182, 212, 0.12)',
     },
     {
       label: 'Concedidos',
       value: grantedToday ?? 0,
-      icon: '✅',
+      icon: <CheckCircle2 size={24} />,
       color: 'var(--status-granted)',
       bgColor: 'var(--status-granted-bg)',
     },
     {
       label: 'Denegados',
       value: deniedToday ?? 0,
-      icon: '❌',
+      icon: <XCircle size={24} />,
       color: 'var(--status-denied)',
       bgColor: 'var(--status-denied-bg)',
     },
     {
       label: 'Anomalías',
       value: anomaliesToday ?? 0,
-      icon: '⚠️',
+      icon: <AlertTriangle size={24} />,
       color: 'var(--status-anomaly)',
       bgColor: 'var(--status-anomaly-bg)',
     },
   ];
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-in">
       {/* Page header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div className="animate-in animate-in-delay-1" style={{ marginBottom: '32px' }}>
         <h1
           style={{
             fontSize: '1.75rem',
@@ -95,6 +96,7 @@ export default async function DashboardPage() {
 
       {/* Stats cards */}
       <div
+        className="animate-in animate-in-delay-2"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -105,9 +107,18 @@ export default async function DashboardPage() {
         {stats.map((stat, i) => (
           <div
             key={stat.label}
-            className={`glass-card animate-slide-in-up delay-${i === 0 ? '75' : i === 1 ? '150' : i === 2 ? '225' : '300'}`}
-            style={{ padding: '20px' }}
+            className={`card stat-card`}
+            style={{ padding: '24px', position: 'relative' }}
           >
+            <div 
+              style={{
+                position: 'absolute',
+                top: 0, left: 24, right: 24, height: 2,
+                background: stat.color,
+                opacity: 0.8,
+                borderRadius: '0 0 4px 4px'
+              }}
+            />
             <div
               style={{
                 display: 'flex',
@@ -123,17 +134,18 @@ export default async function DashboardPage() {
                     color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
-                    marginBottom: '4px',
+                    marginBottom: '8px',
                   }}
                 >
                   {stat.label}
                 </p>
                 <p
                   style={{
-                    fontSize: '2rem',
+                    fontSize: '2.5rem',
                     fontWeight: 800,
                     color: stat.color,
                     lineHeight: 1,
+                    letterSpacing: '-1px'
                   }}
                 >
                   {stat.value}
@@ -145,10 +157,10 @@ export default async function DashboardPage() {
                   height: 48,
                   borderRadius: 'var(--radius-md)',
                   background: stat.bgColor,
+                  color: stat.color,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.5rem',
                 }}
               >
                 {stat.icon}

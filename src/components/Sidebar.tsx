@@ -2,53 +2,42 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { useTheme } from 'next-themes';
+import { 
+  Server, 
+  Users, 
+  MessageSquare, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  X, 
+  Moon, 
+  Sun,
+  ShieldAlert
+} from 'lucide-react';
 
 const navItems = [
   {
     href: '/dashboard',
     label: 'Registros de Acceso',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
-      </svg>
-    ),
+    icon: Server,
   },
   {
     href: '/dashboard/users',
     label: 'Gestión de Usuarios',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: Users,
   },
   {
     href: '/dashboard/telegram',
     label: 'Usuarios Telegram',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
+    icon: MessageSquare,
   },
   {
     href: '/dashboard/settings',
     label: 'Ajustes',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-      </svg>
-    ),
+    icon: Settings,
   },
 ];
 
@@ -57,17 +46,26 @@ export default function Sidebar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const supabase = createBrowserClient();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.replace('/login');
   };
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
     <>
       {/* Mobile hamburger button */}
       <button
-        id="sidebar-toggle"
         onClick={() => setIsOpen(!isOpen)}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg md:hidden"
         style={{
@@ -77,27 +75,14 @@ export default function Sidebar() {
         }}
         aria-label="Toggle menu"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          {isOpen ? (
-            <>
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </>
-          ) : (
-            <>
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </>
-          )}
-        </svg>
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Overlay for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 z-30 md:hidden"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -122,18 +107,17 @@ export default function Sidebar() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: '0 4px 12px var(--accent-cyan-glow)'
               }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <ShieldAlert size={22} strokeWidth={2.5} />
             </div>
             <div>
               <h1
                 style={{
                   fontSize: '1rem',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   color: 'var(--text-primary)',
                   lineHeight: 1.2,
                 }}
@@ -142,9 +126,9 @@ export default function Sidebar() {
               </h1>
               <p
                 style={{
-                  fontSize: '0.7rem',
+                  fontSize: '0.65rem',
                   color: 'var(--text-muted)',
-                  fontWeight: 500,
+                  fontWeight: 600,
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                 }}
@@ -156,13 +140,13 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav style={{ flex: 1, padding: '16px 0' }}>
+        <nav style={{ flex: 1, padding: '24px 0', overflowY: 'auto' }}>
           <p
             style={{
               padding: '0 24px',
-              marginBottom: '8px',
+              marginBottom: '12px',
               fontSize: '0.65rem',
-              fontWeight: 600,
+              fontWeight: 700,
               color: 'var(--text-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
@@ -170,32 +154,74 @@ export default function Sidebar() {
           >
             Navegación
           </p>
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`sidebar-link ${isActive ? 'active' : ''}`}
-                onClick={() => setIsOpen(false)}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            );
-          })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`sidebar-link ${isActive ? 'active' : ''}`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="icon-wrapper" style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: isActive ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(20, 184, 166, 0.15))' : 'transparent',
+                    color: isActive ? 'var(--accent-cyan)' : 'var(--text-tertiary)',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  </span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
-        {/* Footer with Sign Out */}
+        {/* Footer with Theme Toggle & Sign Out */}
         <div
           style={{
             padding: '16px 20px',
             borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '12px',
           }}
         >
+          {mounted && (
+            <button
+              onClick={toggleTheme}
+              className="sidebar-link"
+              style={{
+                width: '100%',
+                margin: 0,
+                padding: '10px 12px',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                background: 'transparent',
+                border: 'none',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+            >
+              <span className="icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', color: 'var(--text-muted)' }}>
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                Modo {theme === 'dark' ? 'Claro' : 'Oscuro'}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={handleSignOut}
             className="sidebar-link"
@@ -219,12 +245,10 @@ export default function Sidebar() {
                (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Cerrar Sesión</span>
+            <span className="icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
+                <LogOut size={18} />
+            </span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>Cerrar Sesión</span>
           </button>
           
           <div
@@ -234,15 +258,17 @@ export default function Sidebar() {
               gap: '8px',
               fontSize: '0.75rem',
               color: 'var(--text-muted)',
+              marginTop: '4px',
+              paddingLeft: '12px'
             }}
           >
             <div
+              className="animate-pulse-glow"
               style={{
                 width: 8,
                 height: 8,
                 borderRadius: '50%',
                 background: 'var(--status-granted)',
-                boxShadow: '0 0 6px rgba(34, 197, 94, 0.5)',
               }}
             />
             Sistema activo
