@@ -63,10 +63,11 @@ export async function POST(request: NextRequest) {
     // 4. AUTO-CAPTURA: Si el PIC dice que la puerta se abrió (GRANTED), pero no conocemos al usuario...
     // ¡Lo registramos automáticamente como "Usuario Desconocido"!
     if (!user && accessStatus === 'GRANTED') {
+      const shortCred = credential.length > 4 ? credential.slice(-4) : credential;
       const { data: newUser, error: insertUserError } = await supabaseAdmin
         .from('users')
         .insert({
-          name: 'Usuario Desconocido',
+          name: `Usuario Desconocido (*${shortCred})`,
           rfid_tag: credential,
           role: 'user'
         })
