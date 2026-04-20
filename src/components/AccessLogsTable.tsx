@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Extended type for access logs with joined user data
 interface AccessLogWithUser {
@@ -56,12 +57,23 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
   const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Pagination Status
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const handleNewLog = useCallback((payload: { new: AccessLogWithUser }) => {
     const newLog = payload.new;
-    setLogs((prev) => [newLog, ...prev].slice(0, 100));
+    setLogs((prev) => {
+      // Avoid inserting duplicate IDs
+      if (prev.some((log) => log.id === newLog.id)) return prev;
+      return [newLog, ...prev];
+    });
     setNewLogIds((prev) => new Set(prev).add(newLog.id));
 
+    // Si estás en la primera página, empujamos a la vista
+    // de lo contrario se añadirá pero no se forzará salto.
+    
     // Remove "new" highlight after animation
     setTimeout(() => {
       setNewLogIds((prev) => {
@@ -85,6 +97,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
           table: 'access_logs',
         },
         (payload) => {
+           // We might not get the user relation instantly, so it falls back to "Desconocido"
           handleNewLog(payload as unknown as { new: AccessLogWithUser });
         }
       )
@@ -98,7 +111,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
         (payload) => {
           const updated = payload.new as AccessLogWithUser;
           setLogs((prev) =>
-            prev.map((log) => (log.id === updated.id ? updated : log))
+            prev.map((log) => (log.id === updated.id ? { ...log, ...updated } : log))
           );
         }
       )
@@ -111,10 +124,25 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
     };
   }, [handleNewLog]);
 
+  // Derived filtered state
   const filteredLogs = filterStatus === 'all' ? logs : logs.filter((l) => l.status === filterStatus);
 
+  // Derived pagination variables
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / ITEMS_PER_PAGE));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  
+  const paginatedLogs = filteredLogs.slice(
+    (validCurrentPage - 1) * ITEMS_PER_PAGE,
+    validCurrentPage * ITEMS_PER_PAGE
+  );
+
+  // Resets to page 1 whenever filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus]);
+
   return (
-    <div>
+    <div className="animate-in animate-in-delay-3">
       {/* Header bar */}
       <div
         style={{
@@ -131,9 +159,18 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
           {['all', 'GRANTED', 'DENIED', 'ANOMALY'].map((status) => (
             <button
               key={status}
-              id={`filter-${status.toLowerCase()}`}
               onClick={() => setFilterStatus(status)}
               className={`btn btn-sm ${filterStatus === status ? 'btn-primary' : 'btn-secondary'}`}
+              style={{
+                background: filterStatus === status ? 'linear-gradient(135deg, var(--accent-cyan), var(--accent-teal))' : 'transparent',
+                border: filterStatus === status ? 'none' : '1px solid var(--border-medium)',
+                color: filterStatus === status ? '#ffffff' : 'var(--text-secondary)',
+                fontWeight: filterStatus === status ? 700 : 500,
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
             >
               {status === 'all' ? 'Todos' : status}
             </button>
@@ -145,8 +182,11 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
             fontSize: '0.75rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
             color: isConnected ? 'var(--status-granted)' : 'var(--text-muted)',
           }}
         >
@@ -156,77 +196,119 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
               height: 8,
               borderRadius: '50%',
               background: isConnected ? 'var(--status-granted)' : 'var(--text-muted)',
-              boxShadow: isConnected ? '0 0 6px rgba(34, 197, 94, 0.5)' : 'none',
+              boxShadow: isConnected ? '0 0 8px rgba(34, 197, 94, 0.6)' : 'none',
               transition: 'all 300ms',
             }}
           />
-          {isConnected ? 'Tiempo real activo' : 'Conectando...'}
+          {isConnected ? 'Tiempo real' : 'Conectando...'}
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table Card */}
       <div
-        className="glass-card"
-        style={{ overflow: 'auto', maxHeight: 'calc(100vh - 240px)' }}
+        className="card"
+        style={{ overflow: 'hidden' }}
       >
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Fecha y Hora</th>
-              <th>Usuario</th>
-              <th>Tag RFID</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLogs.length === 0 ? (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                  No hay registros {filterStatus !== 'all' ? `con estado "${filterStatus}"` : ''}
-                </td>
+                <th>Fecha y Hora</th>
+                <th>Usuario</th>
+                <th>Tag RFID</th>
+                <th>Estado</th>
               </tr>
-            ) : (
-              filteredLogs.map((log) => (
-                <tr key={log.id} className={newLogIds.has(log.id) ? 'new-row' : ''}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                    {formatTimestamp(log.timestamp)}
-                  </td>
-                  <td style={{ color: log.users?.name ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: log.users?.name ? 500 : 400 }}>
-                    {log.users?.name || '— Desconocido —'}
-                  </td>
-                  <td>
-                    <code
-                      style={{
-                        background: 'rgba(0,0,0,0.3)',
-                        padding: '2px 8px',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.8rem',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      {log.rfid_tag_used}
-                    </code>
-                  </td>
-                  <td>
-                    <StatusBadge status={log.status} />
+            </thead>
+            <tbody>
+              {paginatedLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+                    No hay registros {filterStatus !== 'all' ? `con estado "${filterStatus}"` : ''}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                paginatedLogs.map((log) => (
+                  <tr key={log.id} className={newLogIds.has(log.id) ? 'new-row animate-pulse-glow' : ''} style={{ transition: 'background-color 2s ease' }}>
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                      {formatTimestamp(log.timestamp)}
+                    </td>
+                    <td style={{ color: log.users?.name ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: log.users?.name ? 600 : 400 }}>
+                      {log.users?.name || '— Desconocido —'}
+                    </td>
+                    <td>
+                      <code
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.05)',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontFamily: 'monospace',
+                          color: 'var(--text-secondary)'
+                        }}
+                      >
+                        {log.rfid_tag_used}
+                      </code>
+                    </td>
+                    <td>
+                      <StatusBadge status={log.status} />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 24px',
+          borderTop: '1px solid var(--border-subtle)',
+          background: 'rgba(0,0,0,0.01)'
+        }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            Mostrando pág {validCurrentPage} de {totalPages} ({filteredLogs.length} totales)
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={validCurrentPage === 1}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px' }}
+            >
+              <ChevronLeft size={16} /> Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={validCurrentPage === totalPages}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px' }}
+            >
+              Siguiente <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
       </div>
 
-      <p
-        style={{
-          marginTop: '12px',
-          fontSize: '0.75rem',
-          color: 'var(--text-muted)',
-          textAlign: 'right',
-        }}
-      >
-        Mostrando {filteredLogs.length} registros
-      </p>
+      <style jsx>{`
+        .badge {
+          display: inline-block;
+          padding: 4px 10px;
+          border-radius: 99px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .badge-granted { background: var(--status-granted-bg); color: var(--status-granted); }
+        .badge-denied { background: var(--status-denied-bg); color: var(--status-denied); }
+        .badge-anomaly { background: var(--status-anomaly-bg); color: var(--status-anomaly); }
+        .new-row { background: rgba(6, 182, 212, 0.1) !important; }
+        .dark .new-row { background: rgba(6, 182, 212, 0.15) !important; }
+      `}</style>
     </div>
   );
 }

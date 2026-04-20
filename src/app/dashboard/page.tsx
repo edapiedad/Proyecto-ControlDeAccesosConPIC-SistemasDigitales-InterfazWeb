@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/server';
 import AccessLogsTable from '@/components/AccessLogsTable';
-import { ClipboardList, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { ClipboardList, CircleCheck, CircleX, TriangleAlert } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,21 +55,21 @@ export default async function DashboardPage() {
     {
       label: 'Concedidos',
       value: grantedToday ?? 0,
-      icon: <CheckCircle2 size={24} />,
+      icon: <CircleCheck size={24} />,
       color: 'var(--status-granted)',
       bgColor: 'var(--status-granted-bg)',
     },
     {
       label: 'Denegados',
       value: deniedToday ?? 0,
-      icon: <XCircle size={24} />,
+      icon: <CircleX size={24} />,
       color: 'var(--status-denied)',
       bgColor: 'var(--status-denied-bg)',
     },
     {
       label: 'Anomalías',
       value: anomaliesToday ?? 0,
-      icon: <AlertTriangle size={24} />,
+      icon: <TriangleAlert size={24} />,
       color: 'var(--status-anomaly)',
       bgColor: 'var(--status-anomaly-bg)',
     },

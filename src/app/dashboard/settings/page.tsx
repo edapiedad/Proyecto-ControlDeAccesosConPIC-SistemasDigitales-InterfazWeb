@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { Settings2, ShieldCheck, Loader2, CircleCheck, TriangleAlert } from 'lucide-react';
 
 export default function SettingsPage() {
   const supabase = createBrowserClient();
@@ -14,9 +15,6 @@ export default function SettingsPage() {
   
   const [showConfirm, setShowConfirm] = useState(false);
   const [password, setPassword] = useState('');
-  
-  const [invitations, setInvitations] = useState<any[]>([]);
-  const [newInviteToken, setNewInviteToken] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -31,32 +29,8 @@ export default function SettingsPage() {
       setProfile(data);
       setTelegramId(data?.telegram_id?.toString() || '');
     }
-
-    // Fetch invitations created by this user
-    const { data: invites } = await supabase
-      .from('invitations')
-      .select('*')
-      .order('created_at', { ascending: false });
     
-    setInvitations(invites || []);
     setIsLoading(false);
-  }
-
-  async function generateInvitation() {
-    const token = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    const { error } = await supabase.from('invitations').insert({
-      token,
-      created_by: user?.id
-    });
-
-    if (error) {
-       console.error('Error al generar invitación:', error);
-    } else {
-       setNewInviteToken(token);
-       fetchData();
-    }
   }
 
   async function handleUpdateTelegramId(e: React.FormEvent) {
@@ -103,20 +77,21 @@ export default function SettingsPage() {
   if (isLoading) return <div className="animate-pulse" style={{ color: 'var(--text-muted)' }}>Cargando ajustes...</div>;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      <header>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
-          Ajustes de Seguridad
+    <div className="animate-in">
+      <header className="animate-in animate-in-delay-1" style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Settings2 size={24} color="var(--accent-cyan)" /> Ajustes de Seguridad
         </h1>
-        <p style={{ color: 'var(--text-muted)' }}>Gestiona tu identidad de Telegram y las invitaciones del sistema</p>
+        <p style={{ color: 'var(--text-muted)' }}>Gestiona tu identidad de Telegram para acceso mediante IA</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+      <div className="animate-in animate-in-delay-2" style={{ display: 'flex', justifyContent: 'center' }}>
         
-        {/* Sección: Perfil y Telegram ID */}
-        <section className="glass-card" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>👤</span> Perfil de Administrador
+        {/* Sección: Perfil y Telegram ID (Centrada) */}
+        <section className="glass-card" style={{ padding: '32px', width: '100%', maxWidth: '600px', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 2, background: 'var(--status-granted)', opacity: 0.8, borderRadius: '0 0 4px 4px' }} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ color: 'var(--text-secondary)' }}><ShieldCheck size={22} /></span> Perfil de Administrador
           </h2>
           
           <form onSubmit={(e) => { e.preventDefault(); setShowConfirm(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -129,78 +104,45 @@ export default function SettingsPage() {
                 value={telegramId}
                 onChange={(e) => setTelegramId(e.target.value)}
               />
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                Este ID permite que el Bot te reconozca como administrador.
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.5 }}>
+                Este ID numérico permite que nuestro bot inteligente mapee tus consultas en lenguaje natural a tu cuenta administrativa en la plataforma.
               </p>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
+            <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '12px 24px' }}>
               Guardar Cambios
             </button>
           </form>
 
           {message.text && (
-            <div style={{ 
-              marginTop: '16px', 
+            <div className="animate-fade-in" style={{ 
+              marginTop: '20px', 
               padding: '12px', 
               borderRadius: '8px',
               background: message.type === 'success' ? 'var(--status-granted-bg)' : 'var(--status-denied-bg)',
               color: message.type === 'success' ? 'var(--status-granted)' : 'var(--status-denied)',
-              fontSize: '0.85rem'
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}>
+              {message.type === 'success' ? <CircleCheck size={18} /> : <TriangleAlert size={18} />}
               {message.text}
             </div>
           )}
-        </section>
-
-        {/* Sección: Invitaciones de Equipo */}
-        <section className="glass-card" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>🎟️</span> Invitaciones del Sistema
-          </h2>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <button onClick={generateInvitation} className="btn" style={{ background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-cyan)', border: '1px dashed var(--accent-cyan)' }}>
-              + Generar Nueva Clave
-            </button>
-
-            {newInviteToken && (
-               <div className="animate-bounce" style={{ padding: '12px', background: 'var(--bg-primary)', border: '1px solid var(--accent-cyan)', borderRadius: '8px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Clave Generada:</p>
-                  <code style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>{newInviteToken}</code>
-               </div>
-            )}
-
-            <div style={{ marginTop: '10px' }}>
-              <p style={labelStyle}>Claves Recientes</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {invitations.slice(0, 5).map((inv) => (
-                  <div key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <code style={{ color: inv.is_used ? 'var(--text-muted)' : 'var(--text-primary)' }}>{inv.token}</code>
-                    <span style={{ 
-                      fontSize: '0.65rem', 
-                      padding: '2px 8px', 
-                      borderRadius: '10px',
-                      background: inv.is_used ? 'var(--status-denied-bg)' : 'var(--status-granted-bg)',
-                      color: inv.is_used ? 'var(--status-denied)' : 'var(--status-granted)'
-                    }}>
-                      {inv.is_used ? 'Usada' : 'Activa'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </section>
       </div>
 
       {/* Modal de Confirmación por Contraseña */}
       {showConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ padding: '32px', maxWidth: '400px', width: '90%' }}>
-            <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Confirmar identidad</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>
-              Por seguridad, ingresa tu contraseña para autorizar el cambio del ID de Telegram.
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-card animate-fade-in" style={{ padding: '32px', maxWidth: '400px', width: '90%', border: '1px solid var(--border-accent)' }}>
+            <h3 style={{ marginBottom: '16px', fontWeight: 800, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <ShieldCheck color="var(--accent-cyan)" /> Confirmar identidad
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: 1.5 }}>
+              Por seguridad de la plataforma, ingresa tu contraseña maestra para autorizar la integración con la cuenta de Telegram seleccionada.
             </p>
             <form onSubmit={handleUpdateTelegramId}>
               <input 
@@ -213,9 +155,9 @@ export default function SettingsPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                <button type="button" onClick={() => setShowConfirm(false)} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-subtle)' }}>Cancelar</button>
+                <button type="button" onClick={() => setShowConfirm(false)} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isSaving}>
-                  {isSaving ? 'Verificando...' : 'Confirmar'}
+                  {isSaving ? <><Loader2 size={16} className="animate-spin" /> Verificando</> : 'Confirmar'}
                 </button>
               </div>
             </form>
@@ -229,7 +171,7 @@ export default function SettingsPage() {
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.75rem',
-  fontWeight: 600,
+  fontWeight: 700,
   color: 'var(--text-secondary)',
   marginBottom: '8px',
   textTransform: 'uppercase',
