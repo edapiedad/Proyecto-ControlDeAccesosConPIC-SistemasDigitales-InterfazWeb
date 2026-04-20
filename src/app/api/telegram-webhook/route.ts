@@ -102,29 +102,39 @@ export async function POST(request: NextRequest) {
  * Check if a Telegram user is authorized via env or database.
  */
 async function checkAuthorization(telegramUserId: number): Promise<boolean> {
-  // Check env-based authorization
-  const envIds = getAuthorizedIdsFromEnv();
-  if (envIds.includes(telegramUserId)) {
-    return true;
+  // 1. Verificación en Tabla de Perfiles (Administradores Registrados)
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('telegram_id', telegramUserId)
+      .maybeSingle();
+
+    if (profile) return true;
+  } catch (err) {
+    console.error('[Telegram Auth] Error checking profiles:', err);
   }
 
-  // Check database-based authorization
+  // 2. Verificación en Tabla de Usuarios Autorizados Manualmente
   try {
-    const { data, error } = await supabaseAdmin
+    const { data: authorized } = await supabaseAdmin
       .from('telegram_authorized_users')
       .select('is_active')
       .eq('telegram_id', telegramUserId)
       .maybeSingle();
 
-    if (error) {
-      console.error('[Telegram Auth] DB check error:', error);
-      return false;
-    }
-
-    return data?.is_active === true;
-  } catch {
-    return false;
+    if (authorized?.is_active) return true;
+  } catch (err) {
+    console.error('[Telegram Auth] Error checking authorized users:', err);
   }
+
+  // 3. Fallback: IDs quemados en .env (Opcional, se puede eliminar para máxima limpieza)
+  const envIds = getAuthorizedIdsFromEnv();
+  if (envIds.includes(telegramUserId)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
