@@ -3,7 +3,7 @@ import { generateText, generateJSON } from '@/lib/gemini';
 
 // Structured query response from LLM
 interface QueryIntent {
-  table: 'access_logs' | 'users';
+  table: 'access_logs' | 'users' | 'view_top_users' | 'view_inactive_users' | 'view_peak_hours';
   filters: {
     column: string;
     operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike';
@@ -33,6 +33,20 @@ Tablas disponibles en la base de datos:
    - timestamp: TIMESTAMPTZ (fecha y hora del intento de acceso)
    - status: VARCHAR ('GRANTED' = acceso concedido, 'DENIED' = acceso denegado, 'ANOMALY' = anomalía detectada)
 
+3. "view_top_users" — Vista Analítica de Asiduidad
+   - Sirve para responder: "¿Quién entra más veces?", "Top usuarios"
+   - Columnas: name, total_accesses (entero), last_access (fecha)
+   - Ya viene ordenada de mayor a menor por defect
+
+4. "view_inactive_users" — Vista Analítica de Fantasmas
+   - Sirve para responder: "¿Quién no ha venido nunca?", "Tarjetas inactivas"
+   - Columnas: id, name, rfid_tag, role
+
+5. "view_peak_hours" — Vista Analítica de Tráfico
+   - Sirve para responder: "¿A qué hora hay más picos?", "Horas con más accesos"
+   - Columnas: hour_of_day (0 a 23), access_count (entero)
+   - Ya viene ordenada de mayor a menor afluencia
+
 Notas:
 - Las fechas están en formato ISO 8601 (ej: 2025-01-15T14:30:00)
 - El "timestamp" es la hora del servidor cuando se registró el acceso
@@ -52,7 +66,7 @@ ${SCHEMA_DESCRIPTION}
 
 Responde SIEMPRE con un JSON válido con esta estructura:
 {
-  "table": "access_logs" | "users",
+  "table": "access_logs" | "users" | "view_top_users" | "view_inactive_users" | "view_peak_hours",
   "filters": [
     { "column": "nombre_columna", "operator": "eq|neq|gt|gte|lt|lte|like|ilike", "value": "valor" }
   ],
@@ -63,15 +77,12 @@ Responde SIEMPRE con un JSON válido con esta estructura:
   "join_users": true si necesitas unir con la tabla users (solo para access_logs)
 }
 
-Reglas:
-- Si recibes un audio adjunto, escúchalo, extrae la intención del usuario y genera el JSON.
-- Para filtros de fecha/hora, usa formato ISO 8601
-- Hoy es ${new Date().toISOString().split('T')[0]}
-- Para "hoy", filtra timestamp >= inicio del día actual en UTC-4
-- Para búsquedas de nombre, usa "ilike" con comodines: "%texto%"
-- Si no se especifica un límite, usa 20
-- Si la pregunta es sobre accesos o movimientos, usa la tabla "access_logs" con join_users=true
-- Si la pregunta es sobre usuarios o personas registradas, usa la tabla "users"
+Reglas IMPORTANTES y Estrictas:
+1. SIEMPRE debes responder ÚNICA y EXCLUSIVAMENTE con el JSON. Sin markdown, sin explicaciones. Solo el objeto {}.
+2. Para "hoy", el timestamp de inicio es ${new Date().toISOString().split('T')[0]}T00:00:00Z. Usa el operador 'gte' sobre access_logs.
+3. Consultas de "Cuántos" (Conteo de eventos): Pide una consulta normal limitada a 50 (table: access_logs) y tú mismo contarás las filas.
+4. Consultas estadísticas transversales (Preguntas de "Quién entra más", "Usuarios que nunca entran", "Horas Pico"): ¡UTILIZA OBLIGATORIAMENTE LAS VISTAS ANALÍTICAS (view_)!
+5. Si no sabes qué consultar, genera un JSON vacío (vacío pero válido).
 `;
 
     // Si no hay texto, forzamos a que interprete la nota de voz
@@ -91,7 +102,10 @@ Reglas:
     }
 
     if (Array.isArray(results) && results.length === 0) {
-      return '📭 No se encontraron resultados para tu consulta.';
+      if (queryIntent.table === 'users') {
+        return '📭 Parece que la tabla de Usuarios está totalmente vacía. No hay usuarios físicos (tarjetas) registrados en el sistema.';
+      }
+      return '📭 No hay eventos de acceso que coincidan con tu pregunta (El filtro no halló coincidencias).';
     }
 
     // Step 3: Format results using LLM
@@ -125,7 +139,7 @@ async function executeStructuredQuery(
   intent: QueryIntent
 ): Promise<Record<string, unknown>[] | null> {
   try {
-    const validTables = ['access_logs', 'users'] as const;
+    const validTables = ['access_logs', 'users', 'view_top_users', 'view_inactive_users', 'view_peak_hours'] as const;
     if (!validTables.includes(intent.table)) {
       console.error('[NLPQuery] Invalid table:', intent.table);
       return null;
