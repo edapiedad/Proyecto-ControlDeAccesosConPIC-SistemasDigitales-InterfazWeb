@@ -16,6 +16,8 @@ const VALID_STATUSES: AccessStatus[] = [
   'USER_ADDED',    // PIC: "AGREGANDO..."
   'USER_REMOVED',  // PIC: "ELIMINANDO..."
   'FACTORY_RESET', // PIC: "!!! FACTORY RESET !!!"
+  'WIFI_ON',        // ESP32: Conectado a WiFi
+  'WIFI_OFF',       // ESP32: Desconectado de WiFi
 ];
 
 /**

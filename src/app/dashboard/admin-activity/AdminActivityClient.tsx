@@ -53,6 +53,8 @@ function EventBadge({ status }: { status: string }) {
     USER_ADDED: { bg: 'var(--status-granted-bg)', color: 'var(--status-granted)', label: 'Nuevo Usuario Vinculado' },
     USER_REMOVED: { bg: 'var(--status-denied-bg)', color: 'var(--status-denied)', label: 'Credencial Eliminada' },
     FACTORY_RESET: { bg: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', label: 'Reseteo Total de Memoria' },
+    WIFI_ON: { bg: 'rgba(20, 184, 166, 0.15)', color: 'var(--accent-teal)', label: 'Red: Conexión Restaurada' },
+    WIFI_OFF: { bg: 'var(--status-denied-bg)', color: 'var(--status-denied)', label: 'Red: Conexión Perdida' },
   };
 
   const c = config[status] || { bg: '#333', color: '#fff', label: status };

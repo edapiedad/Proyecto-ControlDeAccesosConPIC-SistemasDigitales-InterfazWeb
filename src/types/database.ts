@@ -2,12 +2,12 @@
 // Database type definitions for Supabase tables
 // ============================================
 
-export type AccessStatus = 'GRANTED' | 'DENIED' | 'ANOMALY' | 'ADMIN_START' | 'ADMIN_END' | 'USER_ADDED' | 'USER_REMOVED' | 'FACTORY_RESET';
+export type AccessStatus = 'GRANTED' | 'DENIED' | 'ANOMALY' | 'ADMIN_START' | 'ADMIN_END' | 'USER_ADDED' | 'USER_REMOVED' | 'FACTORY_RESET' | 'WIFI_ON' | 'WIFI_OFF';
 
 export interface User {
   id: string;
   name: string;
-  rfid_tag: string;
+  rfid_tag: string | null;
   role: string;
   created_at: string;
 }
@@ -50,21 +50,21 @@ export type Database = {
         Row: {
           id: string;
           name: string;
-          rfid_tag: string;
+          rfid_tag: string | null;
           role: string;
           created_at: string;
         };
         Insert: {
           id?: string;
           name: string;
-          rfid_tag: string;
+          rfid_tag: string | null;
           role?: string;
           created_at?: string;
         };
         Update: {
           id?: string;
           name?: string;
-          rfid_tag?: string;
+          rfid_tag?: string | null;
           role?: string;
           created_at?: string;
         };

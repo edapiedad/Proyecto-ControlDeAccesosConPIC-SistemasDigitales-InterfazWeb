@@ -42,6 +42,8 @@ function StatusBadge({ status }: { status: string }) {
     USER_ADDED: { color: 'var(--status-granted)', label: 'Credencial Vinculada' },
     USER_REMOVED: { color: 'var(--status-denied)', label: 'Credencial Revocada' },
     FACTORY_RESET: { color: 'var(--status-anomaly)', label: 'Reseteo de Fábrica' },
+    WIFI_ON: { color: 'var(--accent-teal)', label: 'Conexión WiFi Restaurada' },
+    WIFI_OFF: { color: 'var(--status-denied)', label: 'Pérdida de Conexión WiFi' },
   };
 
   const c = config[status] || { color: 'var(--text-muted)', label: status };
