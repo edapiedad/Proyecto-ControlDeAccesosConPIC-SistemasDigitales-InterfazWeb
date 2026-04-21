@@ -174,13 +174,13 @@ export default function UserForm({
               left: 0,
               right: 0,
               zIndex: 999,
-              background: '#0f172a', // Fondo completamente sólido extra oscuro
-              border: '1px solid var(--border-medium)',
-              borderRadius: 'var(--radius-md)',
+              background: 'var(--surface-highest)',
+              border: '1px solid var(--border-ghost)',
+              borderRadius: 'var(--radius-sm)',
               marginTop: '4px',
               maxHeight: '220px',
               overflowY: 'auto',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.8)' // Sombra más dura para resaltar sobre el fondo
+              boxShadow: 'var(--shadow-ambient)'
             }}>
               <div style={{ padding: '8px 12px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)' }}>
                 Credenciales recientes (libres)
@@ -198,7 +198,7 @@ export default function UserForm({
                     alignItems: 'center',
                     gap: '12px'
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#1e293b')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-high)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)' }}>
@@ -264,13 +264,14 @@ export default function UserForm({
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
           {onCancel && (
             <button
               type="button"
               className="btn btn-secondary"
               onClick={onCancel}
               disabled={isSubmitting}
+              style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
               Cancelar
             </button>
@@ -280,6 +281,7 @@ export default function UserForm({
             className="btn btn-primary"
             disabled={isSubmitting}
             id="submit-user"
+            style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
             {isSubmitting ? (
               <>

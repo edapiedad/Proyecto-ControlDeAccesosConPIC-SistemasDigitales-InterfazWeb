@@ -8,9 +8,10 @@ interface UsersTableProps {
   users: User[];
   onDelete: (userId: string) => Promise<void>;
   onEdit: (user: User) => void;
+  retiredView?: boolean;
 }
 
-export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps) {
+export default function UsersTable({ users, onDelete, onEdit, retiredView = false }: UsersTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -39,13 +40,14 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
   }
 
   return (
-    <div className="glass-card" style={{ overflow: 'auto' }}>
+    <div className="onyx-card" style={{ overflow: 'auto' }}>
       <table className="data-table">
         <thead>
           <tr>
+            <th>ID Interno</th>
             <th>Nombre</th>
-            <th>Tipo</th>
-            <th>Credencial</th>
+            {!retiredView && <th>Tipo</th>}
+            {!retiredView && <th>Credencial</th>}
             <th>Rol</th>
             <th>Registrado</th>
             <th style={{ textAlign: 'right' }}>Acciones</th>
@@ -60,64 +62,62 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
             </tr>
           ) : (
             users.map((user) => (
-              <tr key={user.id} style={{ background: (user.name.includes('Teclado') || user.name.includes('RFID') || user.name.includes('Desconocido')) ? 'rgba(245, 158, 11, 0.06)' : 'transparent' }}>
+              <tr key={user.id} style={{ background: (user.name.includes('Teclado') || user.name.includes('RFID') || user.name.includes('Desconocido')) ? 'var(--surface)' : 'transparent' }}>
+                <td style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {user.id.substring(0, 8).toUpperCase()}
+                </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{user.name}</span>
-                    {(user.name.includes('Teclado') || user.name.includes('RFID') || user.name.includes('Desconocido')) && (
-                      <span style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '99px', background: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', fontWeight: 700 }}>ASIGNAR NOMBRE</span>
+                    {(user.name.includes('Teclado') || user.name.includes('RFID') || user.name.includes('Desconocido')) && !retiredView && (
+                      <span style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '4px', background: 'var(--surface-high)', color: 'var(--status-anomaly)', fontWeight: 700, letterSpacing: '0.05em' }}>REQUERIDO</span>
                     )}
                   </div>
                 </td>
-                <td>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
-                    {user.rfid_tag.startsWith('KEY') ? <><KeyRound size={14} style={{ color: 'var(--accent-cyan)' }} /> Teclado</> : <><CreditCard size={14} style={{ color: 'var(--status-anomaly)' }} /> Tarjeta</>}
-                  </span>
-                </td>
-                <td>
-                  <code
-                    style={{
-                      background: 'rgba(0,0,0,0.05)',
-                      padding: '2px 8px',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.8rem',
-                      fontFamily: 'monospace',
-                    }}
-                  >
-                    {user.rfid_tag}
-                  </code>
-                </td>
+                {!retiredView && (
+                  <>
+                    <td>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                        {user.rfid_tag?.startsWith('KEY') ? <><KeyRound size={14} style={{ color: 'var(--text-muted)' }} /> Teclado</> : <><CreditCard size={14} style={{ color: 'var(--text-muted)' }} /> Tarjeta</>}
+                      </span>
+                    </td>
+                    <td>
+                      <code style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                        {user.rfid_tag}
+                      </code>
+                    </td>
+                  </>
+                )}
                 <td>
                   <span
                     style={{
-                      display: 'inline-block',
-                      padding: '2px 8px',
-                      borderRadius: '9999px',
                       fontSize: '0.7rem',
-                      fontWeight: 600,
-                      background: user.role === 'admin' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(148, 163, 184, 0.15)',
-                      color: user.role === 'admin' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                      textTransform: 'capitalize',
+                      fontWeight: 800,
+                      letterSpacing: '0.05em',
+                      color: user.role === 'admin' ? 'var(--accent-teal)' : 'var(--text-secondary)',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    {user.role}
+                    {user.role === 'admin' ? 'Administrador' : 'Colaborador'}
                   </span>
                 </td>
                 <td style={{ fontSize: '0.8rem' }}>{formatDate(user.created_at)}</td>
                 <td>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => onEdit(user)}
-                      id={`edit-user-${user.id}`}
-                    >
-                      <Pencil size={14} />
-                    </button>
+                    {!retiredView && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => onEdit(user)}
+                        title="Editar información"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    )}
                     <button
                       className={`btn btn-sm ${confirmDeleteId === user.id ? 'btn-danger' : 'btn-secondary'}`}
                       onClick={() => handleDelete(user.id)}
                       disabled={deletingId === user.id}
-                      id={`delete-user-${user.id}`}
+                      title={retiredView ? "Borrar del historial" : "Desvincular credencial"}
                     >
                       {deletingId === user.id
                         ? '...'

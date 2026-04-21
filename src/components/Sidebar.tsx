@@ -97,49 +97,39 @@ export default function Sidebar() {
         {/* Logo area */}
         <div
           style={{
-            padding: '24px 20px',
-            borderBottom: '1px solid var(--border-subtle)',
+            padding: '28px 24px',
+            background: 'var(--bg-primary)', /* Sidebar header gets deepest background */
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
-              className="animate-pulse-glow"
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-teal))',
+                width: 24,
+                height: 24,
+                background: 'var(--text-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: '0 4px 12px var(--accent-cyan-glow)'
+                color: 'var(--bg-primary)',
+                fontWeight: 900,
+                fontSize: '14px',
               }}
             >
-              <ShieldAlert size={22} strokeWidth={2.5} />
+              <div style={{ width: 8, height: 8, background: 'var(--bg-primary)', borderRadius: '50%' }} />
             </div>
             <div>
               <h1
                 style={{
-                  fontSize: '1rem',
+                  fontSize: '1.15rem',
                   fontWeight: 800,
                   color: 'var(--text-primary)',
-                  lineHeight: 1.2,
+                  lineHeight: 1,
+                  letterSpacing: '-0.03em',
+                  textTransform: 'uppercase'
                 }}
               >
-                IoT Access
+                Onyx Access
               </h1>
-              <p
-                style={{
-                  fontSize: '0.65rem',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Control Panel
-              </p>
             </div>
           </div>
         </div>
@@ -170,20 +160,18 @@ export default function Sidebar() {
                   className={`sidebar-link ${isActive ? 'active' : ''}`}
                   onClick={() => setIsOpen(false)}
                 >
-                  <span className="icon-wrapper" style={{ 
+                  <span style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
                     width: '32px',
                     height: '32px',
-                    borderRadius: '8px',
-                    background: isActive ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(20, 184, 166, 0.15))' : 'transparent',
-                    color: isActive ? 'var(--accent-cyan)' : 'var(--text-tertiary)',
-                    transition: 'all 0.2s ease',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                    transition: 'color 0.2s ease',
                   }}>
                     <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                   </span>
-                  {item.label}
+                  <span style={{ textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '0.05em' }}>{item.label}</span>
                 </Link>
               );
             })}
@@ -218,11 +206,11 @@ export default function Sidebar() {
                 gap: '12px'
               }}
             >
-              <span className="icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', color: 'var(--text-muted)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', color: 'var(--text-muted)' }}>
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-                Modo {theme === 'dark' ? 'Claro' : 'Oscuro'}
+              <span style={{ textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '0.05em' }}>
+                Theme Toggle
               </span>
             </button>
           )}
@@ -244,16 +232,16 @@ export default function Sidebar() {
               gap: '12px'
             }}
             onMouseOver={(e) => {
-               (e.currentTarget as HTMLElement).style.color = 'var(--status-denied)';
+               (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
             }}
             onMouseOut={(e) => {
                (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
             }}
           >
-            <span className="icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px' }}>
-                <LogOut size={18} />
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', color: 'var(--text-muted)' }}>
+              <LogOut size={18} />
             </span>
-            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>Cerrar Sesión</span>
+            <span style={{ textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '0.05em' }}>Sign Out</span>
           </button>
           
           <div

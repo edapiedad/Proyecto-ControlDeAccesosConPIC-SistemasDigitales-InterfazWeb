@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
-import { ChevronLeft, ChevronRight, ShieldAlert, UserPlus, UserMinus, KeyRound, Trash2, Lock, Unlock, PlusCircle, MinusCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShieldAlert, UserPlus, UserMinus, KeyRound, Trash2, Lock, Unlock, PlusCircle, MinusCircle, Activity, RefreshCcw } from 'lucide-react';
 
 interface AdminEvent {
   id: string;
@@ -48,11 +48,11 @@ function EventIcon({ status }: { status: string }) {
 
 function EventBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
-    ADMIN_START: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: 'Modo Admin ON' },
-    ADMIN_END: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: 'Modo Admin OFF' },
-    USER_ADDED: { bg: 'var(--status-granted-bg)', color: 'var(--status-granted)', label: 'Credencial Añadida' },
+    ADMIN_START: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: 'Gestión Admin: Inicio' },
+    ADMIN_END: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: 'Gestión Admin: Fin' },
+    USER_ADDED: { bg: 'var(--status-granted-bg)', color: 'var(--status-granted)', label: 'Nuevo Usuario Vinculado' },
     USER_REMOVED: { bg: 'var(--status-denied-bg)', color: 'var(--status-denied)', label: 'Credencial Eliminada' },
-    FACTORY_RESET: { bg: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', label: 'Factory Reset' },
+    FACTORY_RESET: { bg: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', label: 'Reseteo Total de Memoria' },
   };
 
   const c = config[status] || { bg: '#333', color: '#fff', label: status };
@@ -148,11 +148,10 @@ export default function AdminActivityClient() {
     <div className="animate-fade-in">
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <ShieldAlert size={28} />
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.02em' }}>
           Actividad Administrativa
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Historial de eventos del modo administrador del PIC (tarjetas añadidas, eliminadas, resets)
         </p>
       </div>
@@ -162,21 +161,25 @@ export default function AdminActivityClient() {
         {[
           { label: 'Credenciales Añadidas', value: stats.added, color: 'var(--status-granted)' },
           { label: 'Credenciales Eliminadas', value: stats.removed, color: 'var(--status-denied)' },
-          { label: 'Sesiones Admin', value: stats.adminSessions, color: 'var(--accent-cyan)' },
+          { label: 'Sesiones Admin', value: stats.adminSessions, color: 'var(--accent-teal)' },
           { label: 'Factory Resets', value: stats.resets, color: 'var(--status-anomaly)' },
         ].map((stat) => (
-          <div key={stat.label} className="glass-card" style={{ padding: '20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: stat.color }}>{stat.value}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+          <div key={stat.label} style={{ background: 'var(--surface-low)', padding: '24px 20px', position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px', background: stat.color }} />
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
               {stat.label}
             </div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{stat.value}</div>
           </div>
         ))}
       </div>
 
       {/* Filter */}
-      <div className="glass-card" style={{ padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Filtrar:</span>
+      {/* Filter */}
+      <div style={{ padding: '8px 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '8px' }}>
+          Filtrar:
+        </span>
         {[
           { value: 'all', label: 'Todos' },
           { value: 'USER_ADDED', label: 'Añadidos' },
@@ -189,14 +192,13 @@ export default function AdminActivityClient() {
             key={f.value}
             onClick={() => { setFilterStatus(f.value); setCurrentPage(1); }}
             style={{
-              padding: '6px 14px',
+              padding: '6px 16px',
               borderRadius: '99px',
               fontSize: '0.75rem',
               fontWeight: 600,
-              border: '1px solid',
-              borderColor: filterStatus === f.value ? 'var(--accent-cyan)' : 'var(--border-subtle)',
-              background: filterStatus === f.value ? 'var(--accent-cyan-glow)' : 'transparent',
-              color: filterStatus === f.value ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              border: 'none',
+              background: filterStatus === f.value ? 'var(--text-primary)' : 'var(--surface-high)',
+              color: filterStatus === f.value ? 'var(--surface)' : 'var(--text-secondary)',
               cursor: 'pointer',
               transition: 'var(--transition-fast)',
             }}
@@ -207,67 +209,96 @@ export default function AdminActivityClient() {
       </div>
 
       {/* Event List */}
-      <div className="glass-card" style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {isLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}>
+          <div style={{ padding: '40px', textAlign: 'center', background: 'var(--surface-low)' }}>
             <div className="skeleton" style={{ height: 20, width: '60%', margin: '0 auto 12px' }} />
-            <div className="skeleton" style={{ height: 20, width: '80%', margin: '0 auto 12px' }} />
-            <div className="skeleton" style={{ height: 20, width: '70%', margin: '0 auto' }} />
           </div>
         ) : paginatedEvents.length === 0 ? (
-          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-            <ShieldAlert size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px', opacity: 0.3 }} />
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No hay eventos administrativos registrados</p>
+          <div style={{ padding: '60px 20px', textAlign: 'center', background: 'var(--surface-low)' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>No events logged</p>
           </div>
         ) : (
-          <div>
-            {paginatedEvents.map((event, idx) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {paginatedEvents.map((event) => {
+              const dateObj = new Date(event.timestamp);
+              const dateStr = dateObj.toLocaleDateString('es-VE', { timeZone: 'America/Caracas' });
+              const timeStr = dateObj.toLocaleTimeString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit' });
+              
+              const statusColors = {
+                 USER_ADDED: 'var(--status-granted)',
+                 USER_REMOVED: 'var(--status-denied)',
+                 ADMIN_START: 'var(--text-primary)',
+                 ADMIN_END: 'var(--text-muted)',
+                 FACTORY_RESET: 'var(--status-anomaly)'
+              };
+              const pipColor = statusColors[event.status as keyof typeof statusColors] || 'var(--text-muted)';
+              
+              const icons = {
+                 USER_ADDED: <UserPlus size={14} />,
+                 USER_REMOVED: <UserMinus size={14} />,
+                 ADMIN_START: <ShieldAlert size={14} />,
+                 ADMIN_END: <Activity size={14} />,
+                 FACTORY_RESET: <RefreshCcw size={14} />
+              };
+              const IconComp = icons[event.status as keyof typeof icons] || <Activity size={14} />;
+              
+              const textMap = {
+                 USER_ADDED: 'Nueva Credencial Vinculada',
+                 USER_REMOVED: 'Credencial Administrativa Revocada',
+                 ADMIN_START: 'Sesión de Supervisión Iniciada',
+                 ADMIN_END: 'Sesión de Supervisión Finalizada',
+                 FACTORY_RESET: 'Reinicio Maestro de Nodo'
+              };
+              const textLabel = textMap[event.status as keyof typeof textMap] || event.status;
+
+              return (
               <div
                 key={event.id}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
-                  padding: '16px 20px',
-                  borderBottom: idx < paginatedEvents.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                  transition: 'var(--transition-fast)',
+                  gap: '24px',
+                  padding: '24px',
+                  background: 'var(--surface-low)',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
               >
-                {/* Icon */}
+                {/* 1px Vertical Pip */}
                 <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: event.status === 'USER_ADDED' ? 'var(--status-granted-bg)'
-                    : event.status === 'USER_REMOVED' ? 'var(--status-denied-bg)'
-                    : event.status === 'FACTORY_RESET' ? 'var(--status-anomaly-bg)'
-                    : 'rgba(6, 182, 212, 0.15)',
-                  color: event.status === 'USER_ADDED' ? 'var(--status-granted)'
-                    : event.status === 'USER_REMOVED' ? 'var(--status-denied)'
-                    : event.status === 'FACTORY_RESET' ? 'var(--status-anomaly)'
-                    : 'var(--accent-cyan)',
-                  flexShrink: 0,
-                }}>
-                  <EventIcon status={event.status} />
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '2px',
+                  height: '24px',
+                  background: pipColor
+                }} />
+
+                {/* Date / Time */}
+                <div style={{ display: 'flex', flexDirection: 'column', width: '120px' }}>
+                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>{timeStr}</span>
+                  <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: 'var(--text-muted)', marginTop: '2px' }}>{dateStr}</span>
                 </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <EventBadge status={event.status} />
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Credencial: <code style={{ fontSize: '0.75rem', background: 'var(--border-subtle)', padding: '2px 6px', borderRadius: '4px' }}>{event.rfid_tag_used}</code>
+                {/* Event Details */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ color: pipColor, display: 'flex' }}>
+                       {IconComp}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.02em', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
+                      {textLabel}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Tag ID: <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)', marginLeft: '4px' }}>{event.rfid_tag_used}</span>
                   </div>
                 </div>
-
-                {/* Timestamp */}
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
-                  {formatTimestamp(event.timestamp)}
-                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

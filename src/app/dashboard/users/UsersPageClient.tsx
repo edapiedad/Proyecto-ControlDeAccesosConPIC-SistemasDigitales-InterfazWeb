@@ -13,6 +13,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<'actives' | 'retired'>('actives');
 
   const supabase = createBrowserClient();
 
@@ -135,19 +136,39 @@ export default function UsersPage() {
     }
   }
 
-  async function handleDelete(userId: string) {
+  async function handleSoftRelease(userId: string) {
+    try {
+      // Liberar la tarjeta pero mantener el usuario
+      const { error } = await supabase
+        .from('users')
+        .update({ rfid_tag: null })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('[Users] Release error:', error);
+        return;
+      }
+
+      showSuccess('Credencial desvinculada del usuario. Ahora es histórica.');
+      await fetchUsers();
+    } catch (err: unknown) {
+      console.error('[Users] Exception releasing:', err);
+    }
+  }
+
+  async function handlePermanentDelete(userId: string) {
     try {
       const { error } = await supabase.from('users').delete().eq('id', userId);
 
       if (error) {
-        console.error('[Users] Delete error:', error);
+        console.error('[Users] Permanent delete error:', error);
         return;
       }
 
-      showSuccess('Usuario eliminado');
+      showSuccess('Registro eliminado permanentemente del historial');
       await fetchUsers();
     } catch (err: unknown) {
-      console.error('[Users] Exception deleting:', err);
+      console.error('[Users] Exception deleting permanent:', err);
     }
   }
 
@@ -176,12 +197,13 @@ export default function UsersPage() {
               fontWeight: 800,
               color: 'var(--text-primary)',
               marginBottom: '4px',
+              letterSpacing: '-0.02em'
             }}
           >
-            Gestión de Usuarios
+            Gestión de Personal
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Registra, edita y elimina usuarios del sistema de control de acceso
+            Administra las credenciales activas y consulta el historial de registros del sistema.
           </p>
         </div>
         <button
@@ -191,25 +213,47 @@ export default function UsersPage() {
             setEditingUser(null);
           }}
           id="toggle-user-form"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}
         >
-          {showForm ? (
-            '✕ Cerrar'
-          ) : (
-            <>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Nuevo Usuario
-            </>
-          )}
+          {showForm ? '✕ Cancelar' : 'Nuevo Usuario'}
+        </button>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', borderBottom: '1px solid var(--border-ghost)' }}>
+        <button 
+          onClick={() => setActiveTab('actives')}
+          style={{
+            padding: '12px 4px',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+            background: 'none',
+            border: 'none',
+            color: activeTab === 'actives' ? 'var(--text-primary)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'actives' ? '2px solid var(--text-primary)' : '2px solid transparent',
+            cursor: 'pointer',
+            transition: 'var(--transition-fast)'
+          }}
+        >
+          PERSONAL ACTIVO
+        </button>
+        <button 
+          onClick={() => setActiveTab('retired')}
+          style={{
+            padding: '12px 4px',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+            background: 'none',
+            border: 'none',
+            color: activeTab === 'retired' ? 'var(--text-primary)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'retired' ? '2px solid var(--text-primary)' : '2px solid transparent',
+            cursor: 'pointer',
+            transition: 'var(--transition-fast)'
+          }}
+        >
+          HISTORIAL / RETIRADOS
         </button>
       </div>
 
@@ -290,9 +334,10 @@ export default function UsersPage() {
         </div>
       ) : (
         <UsersTable
-          users={users}
-          onDelete={handleDelete}
+          users={users.filter(u => activeTab === 'actives' ? u.rfid_tag !== null : u.rfid_tag === null)}
+          onDelete={activeTab === 'actives' ? handleSoftRelease : handlePermanentDelete}
           onEdit={handleStartEdit}
+          retiredView={activeTab === 'retired'}
         />
       )}
 

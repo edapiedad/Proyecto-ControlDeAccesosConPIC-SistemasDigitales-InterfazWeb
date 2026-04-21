@@ -33,23 +33,26 @@ function formatTimestamp(ts: string): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { cls: string; icon: React.ReactNode; label: string }> = {
-    GRANTED: { cls: 'badge badge-granted', icon: <CheckCircle size={12} />, label: 'Concedido' },
-    DENIED: { cls: 'badge badge-denied', icon: <XCircle size={12} />, label: 'Denegado' },
-    ANOMALY: { cls: 'badge badge-anomaly', icon: <AlertTriangle size={12} />, label: 'Anomalía' },
-    ADMIN_START: { cls: 'badge badge-admin', icon: <Lock size={12} />, label: 'Admin ON' },
-    ADMIN_END: { cls: 'badge badge-admin', icon: <Unlock size={12} />, label: 'Admin OFF' },
-    USER_ADDED: { cls: 'badge badge-granted', icon: <PlusCircle size={12} />, label: 'Añadido' },
-    USER_REMOVED: { cls: 'badge badge-denied', icon: <MinusCircle size={12} />, label: 'Eliminado' },
-    FACTORY_RESET: { cls: 'badge badge-anomaly', icon: <Trash2 size={12} />, label: 'Reset' },
+  const config: Record<string, { color: string; label: string }> = {
+    GRANTED: { color: 'var(--status-granted)', label: 'Acceso Concedido' },
+    DENIED: { color: 'var(--status-denied)', label: 'Acceso Denegado' },
+    ANOMALY: { color: 'var(--status-anomaly)', label: 'Actividad Inusual' },
+    ADMIN_START: { color: 'var(--text-primary)', label: 'Admin Sesión Iniciada' },
+    ADMIN_END: { color: 'var(--text-muted)', label: 'Admin Sesión Finalizada' },
+    USER_ADDED: { color: 'var(--status-granted)', label: 'Credencial Vinculada' },
+    USER_REMOVED: { color: 'var(--status-denied)', label: 'Credencial Revocada' },
+    FACTORY_RESET: { color: 'var(--status-anomaly)', label: 'Reseteo de Fábrica' },
   };
 
-  const c = config[status] || { cls: 'badge', icon: null, label: status };
+  const c = config[status] || { color: 'var(--text-muted)', label: status };
 
   return (
-    <span className={c.cls} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-      {c.icon} {c.label}
-    </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-start' }}>
+      <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.02em', color: c.color }}>
+        {c.label}
+      </span>
+      <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: c.color }} />
+    </div>
   );
 }
 
@@ -163,17 +166,20 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
               onClick={() => setFilterStatus(status)}
               className={`btn btn-sm ${filterStatus === status ? 'btn-primary' : 'btn-secondary'}`}
               style={{
-                background: filterStatus === status ? 'linear-gradient(135deg, var(--accent-cyan), var(--accent-teal))' : 'transparent',
-                border: filterStatus === status ? 'none' : '1px solid var(--border-medium)',
-                color: filterStatus === status ? '#ffffff' : 'var(--text-secondary)',
-                fontWeight: filterStatus === status ? 700 : 500,
+                background: filterStatus === status ? 'var(--text-primary)' : 'var(--surface-high)',
+                border: 'none',
+                color: filterStatus === status ? 'var(--surface)' : 'var(--text-secondary)',
+                fontWeight: 600,
                 padding: '6px 14px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
-                cursor: 'pointer'
+                borderRadius: '99px',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                transition: 'var(--transition-fast)'
               }}
             >
-              {status === 'all' ? 'Todos' : status}
+              {status === 'all' ? 'Ver Todos' : 
+               status === 'GRANTED' ? 'Concedidos' : 
+               status === 'DENIED' ? 'Denegados' : 'Anomalías'}
             </button>
           ))}
         </div>
@@ -207,7 +213,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
 
       {/* Table Card */}
       <div
-        className="card"
+        className="onyx-card"
         style={{ overflow: 'hidden' }}
       >
         <div style={{ overflowX: 'auto' }}>
@@ -237,13 +243,10 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
                       {log.users?.name || '— Sin asignar —'}
                     </td>
                     <td>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        {log.rfid_tag_used.startsWith('KEY') ? <KeyRound size={14} style={{ color: 'var(--accent-cyan)' }} /> : <CreditCard size={14} style={{ color: 'var(--status-anomaly)' }} />}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                        {log.rfid_tag_used.startsWith('KEY') ? <KeyRound size={14} style={{ color: 'var(--text-muted)' }} /> : <CreditCard size={14} style={{ color: 'var(--text-muted)' }} />}
                         <code
                           style={{
-                            background: 'rgba(15, 23, 42, 0.05)',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
                             fontSize: '0.75rem',
                             fontFamily: 'monospace',
                             color: 'var(--text-secondary)'
@@ -269,8 +272,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '16px 24px',
-          borderTop: '1px solid var(--border-subtle)',
-          background: 'rgba(0,0,0,0.01)'
+          background: 'transparent'
         }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
             Mostrando pág {validCurrentPage} de {totalPages} ({filteredLogs.length} totales)
