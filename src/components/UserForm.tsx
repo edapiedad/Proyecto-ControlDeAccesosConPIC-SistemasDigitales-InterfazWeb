@@ -111,7 +111,7 @@ export default function UserForm({
         </div>
 
         {/* RFID Tag */}
-        <div style={{ position: 'relative' }} ref={dropdownRef}>
+        <div style={{ position: 'relative', zIndex: dropdownOpen ? 10 : 1 }} ref={dropdownRef}>
           <label
             htmlFor="user-rfid"
             style={{
@@ -173,15 +173,14 @@ export default function UserForm({
               top: '100%',
               left: 0,
               right: 0,
-              zIndex: 50,
-              background: 'var(--bg-glass)',
+              zIndex: 999,
+              background: '#0f172a', // Fondo completamente sólido extra oscuro
               border: '1px solid var(--border-medium)',
               borderRadius: 'var(--radius-md)',
               marginTop: '4px',
-              backdropFilter: 'blur(16px)',
               maxHeight: '220px',
               overflowY: 'auto',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+              boxShadow: '0 10px 40px rgba(0,0,0,0.8)' // Sombra más dura para resaltar sobre el fondo
             }}>
               <div style={{ padding: '8px 12px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)' }}>
                 Credenciales recientes (libres)
@@ -199,7 +198,7 @@ export default function UserForm({
                     alignItems: 'center',
                     gap: '12px'
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#1e293b')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)' }}>
