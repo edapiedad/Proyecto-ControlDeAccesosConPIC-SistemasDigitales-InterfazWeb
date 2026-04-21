@@ -5,7 +5,7 @@ import { ChevronDown, KeyRound, CreditCard } from 'lucide-react';
 
 interface UserFormProps {
   onSubmit: (data: { name: string; rfid_tag: string; role: string }) => Promise<void>;
-  initialData?: { name: string; rfid_tag: string; role: string };
+  initialData?: { name: string; rfid_tag: string | null; role: string };
   submitLabel?: string;
   onCancel?: () => void;
   availableTags?: string[];
