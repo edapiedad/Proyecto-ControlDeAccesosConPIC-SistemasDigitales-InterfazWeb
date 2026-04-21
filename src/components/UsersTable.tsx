@@ -43,7 +43,8 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
         <thead>
           <tr>
             <th>Nombre</th>
-            <th>Tag RFID</th>
+            <th>Tipo</th>
+            <th>Credencial</th>
             <th>Rol</th>
             <th>Registrado</th>
             <th style={{ textAlign: 'right' }}>Acciones</th>
@@ -52,20 +53,28 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
         <tbody>
           {users.length === 0 ? (
             <tr>
-              <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+              <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                 No hay usuarios registrados
               </td>
             </tr>
           ) : (
             users.map((user) => (
-              <tr key={user.id}>
-                <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                  {user.name}
+              <tr key={user.id} style={{ background: (user.name.includes('Teclado') || user.name.includes('RFID') || user.name.includes('Desconocido')) ? 'rgba(245, 158, 11, 0.06)' : 'transparent' }}>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{user.name}</span>
+                    {(user.name.includes('Teclado') || user.name.includes('RFID') || user.name.includes('Desconocido')) && (
+                      <span style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '99px', background: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', fontWeight: 700 }}>ASIGNAR NOMBRE</span>
+                    )}
+                  </div>
+                </td>
+                <td>
+                  <span style={{ fontSize: '0.85rem' }}>{user.rfid_tag.startsWith('KEY') ? '🔑 Teclado' : '💳 Tarjeta'}</span>
                 </td>
                 <td>
                   <code
                     style={{
-                      background: 'rgba(0,0,0,0.3)',
+                      background: 'rgba(0,0,0,0.05)',
                       padding: '2px 8px',
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '0.8rem',

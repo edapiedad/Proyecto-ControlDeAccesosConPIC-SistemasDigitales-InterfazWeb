@@ -225,7 +225,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
               <tr>
                 <th>Fecha y Hora</th>
                 <th>Usuario</th>
-                <th>Tag RFID</th>
+                <th>Credencial</th>
                 <th>Estado</th>
               </tr>
             </thead>
@@ -243,21 +243,24 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
                       {formatTimestamp(log.timestamp)}
                     </td>
                     <td style={{ color: log.users?.name ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: log.users?.name ? 600 : 400 }}>
-                      {log.users?.name || '— Desconocido —'}
+                      {log.users?.name || '— Sin asignar —'}
                     </td>
                     <td>
-                      <code
-                        style={{
-                          background: 'rgba(15, 23, 42, 0.05)',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontFamily: 'monospace',
-                          color: 'var(--text-secondary)'
-                        }}
-                      >
-                        {log.rfid_tag_used}
-                      </code>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.85rem' }}>{log.rfid_tag_used.startsWith('KEY') ? '🔑' : '💳'}</span>
+                        <code
+                          style={{
+                            background: 'rgba(15, 23, 42, 0.05)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontFamily: 'monospace',
+                            color: 'var(--text-secondary)'
+                          }}
+                        >
+                          {log.rfid_tag_used}
+                        </code>
+                      </span>
                     </td>
                     <td>
                       <StatusBadge status={log.status} />

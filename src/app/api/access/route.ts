@@ -59,11 +59,13 @@ async function findOrCreateUser(credential: string, shouldCreate: boolean) {
 
   // Si no existe y debemos crearlo
   if (shouldCreate) {
+    const isKeypad = credential.startsWith('KEY');
     const shortCred = credential.length > 4 ? credential.slice(-4) : credential;
+    const typeName = isKeypad ? 'Clave Teclado' : 'Tarjeta RFID';
     const { data: newUser, error: insertError } = await supabaseAdmin
       .from('users')
       .insert({
-        name: `Usuario Desconocido (*${shortCred})`,
+        name: `${typeName} (*${shortCred})`,
         rfid_tag: credential,
         role: 'user'
       })
