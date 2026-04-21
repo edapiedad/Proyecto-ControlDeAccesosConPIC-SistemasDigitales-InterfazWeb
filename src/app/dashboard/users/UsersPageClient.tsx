@@ -30,17 +30,42 @@ export default function UsersPage() {
         setUsers(data ?? []);
       }
 
-      // Fetch orphan tags (from access logs without users)
-      const { data: tagsData } = await supabase
+      // Obtener últimos logs para extraer tags huérfanos activos
+      const { data: logsData } = await supabase
         .from('access_logs')
-        .select('rfid_tag_used')
-        .is('user_id', null)
+        .select('rfid_tag_used, status, timestamp')
         .order('timestamp', { ascending: false })
-        .limit(100);
+        .limit(200);
 
-      if (tagsData) {
-        const uniqueTags = Array.from(new Set(tagsData.map(t => t.rfid_tag_used)));
-        setOrphanedTags(uniqueTags);
+      if (logsData) {
+        // Encontrar el último FACTORY_RESET para ignorar claves anteriores
+        const resetIdx = logsData.findIndex(l => l.status === 'FACTORY_RESET');
+        const validLogs = resetIdx !== -1 ? logsData.slice(0, resetIdx) : logsData;
+
+        // Determinar el último estado de cada tag
+        const tagStatusMap = new Map<string, string>();
+        for (const log of validLogs) {
+          if (!tagStatusMap.has(log.rfid_tag_used)) {
+            tagStatusMap.set(log.rfid_tag_used, log.status);
+          }
+        }
+
+        // Obtener solo las claves que NO han sido eliminadas y que NO están ya registradas en la tabla 'users'
+        const activeOrphanTags: string[] = [];
+        const existingTags = new Set((data ?? []).map(u => u.rfid_tag));
+
+        for (const [tag, status] of Array.from(tagStatusMap.entries())) {
+          if (
+            status !== 'USER_REMOVED' && 
+            tag !== 'ADMIN_CTRL' && 
+            tag !== 'SYSTEM' && 
+            tag !== 'UNKNOWN' &&
+            !existingTags.has(tag)
+          ) {
+            activeOrphanTags.push(tag);
+          }
+        }
+        setOrphanedTags(activeOrphanTags);
       }
     } catch (err: unknown) {
       console.error('[Users] Exception fetching:', err);

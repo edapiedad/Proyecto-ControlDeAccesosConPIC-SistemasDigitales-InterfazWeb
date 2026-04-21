@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, KeyRound, CreditCard } from 'lucide-react';
 
 interface UserFormProps {
   onSubmit: (data: { name: string; rfid_tag: string; role: string }) => Promise<void>;
@@ -24,6 +25,19 @@ export default function UserForm({
   const [role, setRole] = useState(initialData?.role ?? 'user');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,7 +111,7 @@ export default function UserForm({
         </div>
 
         {/* RFID Tag */}
-        <div>
+        <div style={{ position: 'relative' }} ref={dropdownRef}>
           <label
             htmlFor="user-rfid"
             style={{
@@ -110,25 +124,96 @@ export default function UserForm({
           >
             Tag RFID o Clave
           </label>
-          <input
-            id="user-rfid"
-            type="text"
-            className="form-input"
-            placeholder="Ej: A1B2C3D4 o KEY:123A"
-            value={rfidTag}
-            onChange={(e) => setRfidTag(e.target.value.toUpperCase())}
-            disabled={isSubmitting}
-            autoComplete="off"
-            list="unused-tags"
-            style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}
-          />
-          {availableTags.length > 0 && (
-            <datalist id="unused-tags">
+          <div style={{ position: 'relative' }}>
+            <input
+              id="user-rfid"
+              type="text"
+              className="form-input"
+              placeholder="Ej: A1B2C3D4 o KEY:123A"
+              value={rfidTag}
+              onChange={(e) => {
+                setRfidTag(e.target.value.toUpperCase());
+                if (availableTags.length > 0) setDropdownOpen(true);
+              }}
+              onFocus={() => {
+                if (availableTags.length > 0) setDropdownOpen(true);
+              }}
+              disabled={isSubmitting}
+              autoComplete="off"
+              style={{ fontFamily: 'monospace', letterSpacing: '0.05em', paddingRight: '40px' }}
+            />
+            {availableTags.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ChevronDown size={18} style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'var(--transition-fast)' }} />
+              </button>
+            )}
+          </div>
+
+          {/* Menú Flotante de Selección */}
+          {dropdownOpen && availableTags.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 50,
+              background: 'var(--bg-glass)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-md)',
+              marginTop: '4px',
+              backdropFilter: 'blur(16px)',
+              maxHeight: '220px',
+              overflowY: 'auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ padding: '8px 12px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)' }}>
+                Credenciales recientes (libres)
+              </div>
               {availableTags.map(tag => (
-                <option key={tag} value={tag}>Credencial reciente (sin registrar)</option>
+                <div
+                  key={tag}
+                  onClick={() => { setRfidTag(tag); setDropdownOpen(false); }}
+                  style={{ 
+                    padding: '10px 14px', 
+                    borderBottom: '1px solid var(--border-subtle)', 
+                    cursor: 'pointer', 
+                    transition: 'background 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)' }}>
+                    {tag.startsWith('KEY:') ? <KeyRound size={14} /> : <CreditCard size={14} />}
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{tag}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{tag.startsWith('KEY:') ? 'Clave de teclado' : 'Tarjeta RFID'}</div>
+                  </div>
+                </div>
               ))}
-            </datalist>
+            </div>
           )}
+
           <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
             Valor hexadecimal del tag o código de teclado (2-20 caracteres)
           </p>
