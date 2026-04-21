@@ -55,7 +55,7 @@ export default function UsersPage() {
         throw new Error(error.message);
       }
 
-      showSuccess('✅ Usuario registrado exitosamente');
+      showSuccess('Usuario registrado exitosamente');
       setShowForm(false);
       await fetchUsers();
     } catch (err: unknown) {
@@ -87,7 +87,7 @@ export default function UsersPage() {
         .eq('rfid_tag_used', data.rfid_tag)
         .is('user_id', null);
 
-      showSuccess('✅ Usuario actualizado exitosamente');
+      showSuccess('Usuario actualizado exitosamente');
       setEditingUser(null);
       await fetchUsers();
     } catch (err: unknown) {
@@ -105,7 +105,7 @@ export default function UsersPage() {
         return;
       }
 
-      showSuccess('🗑️ Usuario eliminado');
+      showSuccess('Usuario eliminado');
       await fetchUsers();
     } catch (err: unknown) {
       console.error('[Users] Exception deleting:', err);

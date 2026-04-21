@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { User } from '@/types/database';
+import { KeyRound, CreditCard, Pencil, Trash2 } from 'lucide-react';
 
 interface UsersTableProps {
   users: User[];
@@ -69,7 +70,9 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
                   </div>
                 </td>
                 <td>
-                  <span style={{ fontSize: '0.85rem' }}>{user.rfid_tag.startsWith('KEY') ? '🔑 Teclado' : '💳 Tarjeta'}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                    {user.rfid_tag.startsWith('KEY') ? <><KeyRound size={14} style={{ color: 'var(--accent-cyan)' }} /> Teclado</> : <><CreditCard size={14} style={{ color: 'var(--status-anomaly)' }} /> Tarjeta</>}
+                  </span>
                 </td>
                 <td>
                   <code
@@ -108,7 +111,7 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
                       onClick={() => onEdit(user)}
                       id={`edit-user-${user.id}`}
                     >
-                      ✏️
+                      <Pencil size={14} />
                     </button>
                     <button
                       className={`btn btn-sm ${confirmDeleteId === user.id ? 'btn-danger' : 'btn-secondary'}`}
@@ -120,7 +123,7 @@ export default function UsersTable({ users, onDelete, onEdit }: UsersTableProps)
                         ? '...'
                         : confirmDeleteId === user.id
                           ? '¿Seguro?'
-                          : '🗑️'}
+                          : <Trash2 size={14} />}
                     </button>
                   </div>
                 </td>

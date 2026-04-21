@@ -140,8 +140,9 @@ Resultados de la base de datos (JSON):
 ${JSON.stringify(results, null, 2)}
 
 Formatea estos resultados como una respuesta clara y legible en español para un chat de Telegram.
-Usa emojis apropiados (✅ para GRANTED, ❌ para DENIED, ⚠️ para ANOMALY).
-Si hay fechas, formátealas de forma legible (ej: "15 ene 2025 a las 2:30 PM").
+Usa emojis apropiados (✅ para GRANTED, ❌ para DENIED, ⚠️ para ANOMALY, 🔐 para ADMIN_START, 🔓 para ADMIN_END, ➕ para USER_ADDED, ➖ para USER_REMOVED).
+IMPORTANTE SOBRE LAS FECHAS: Los timestamps están en UTC. DEBES restarles 4 horas para convertirlos a hora de Venezuela (UTC-4) antes de mostrarlos. Ejemplo: si el JSON dice "05:04:00Z", debes mostrar "1:04 AM".
+Si el campo rfid_tag_used empieza con "KEY", indica que es una clave de teclado. Si no, es una tarjeta RFID.
 No uses markdown avanzado, solo texto plano con emojis y saltos de línea.
 Limita la respuesta a los datos más relevantes.`;
 

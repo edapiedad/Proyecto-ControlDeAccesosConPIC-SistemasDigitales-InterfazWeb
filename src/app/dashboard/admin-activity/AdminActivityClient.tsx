@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
-import { ChevronLeft, ChevronRight, ShieldAlert, UserPlus, UserMinus, KeyRound, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShieldAlert, UserPlus, UserMinus, KeyRound, Trash2, Lock, Unlock, PlusCircle, MinusCircle } from 'lucide-react';
 
 interface AdminEvent {
   id: string;
@@ -48,11 +48,11 @@ function EventIcon({ status }: { status: string }) {
 
 function EventBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; color: string; label: string }> = {
-    ADMIN_START: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: '🔐 Modo Admin ON' },
-    ADMIN_END: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: '🔓 Modo Admin OFF' },
-    USER_ADDED: { bg: 'var(--status-granted-bg)', color: 'var(--status-granted)', label: '➕ Credencial Añadida' },
-    USER_REMOVED: { bg: 'var(--status-denied-bg)', color: 'var(--status-denied)', label: '➖ Credencial Eliminada' },
-    FACTORY_RESET: { bg: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', label: '🗑️ Factory Reset' },
+    ADMIN_START: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: 'Modo Admin ON' },
+    ADMIN_END: { bg: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', label: 'Modo Admin OFF' },
+    USER_ADDED: { bg: 'var(--status-granted-bg)', color: 'var(--status-granted)', label: 'Credencial Añadida' },
+    USER_REMOVED: { bg: 'var(--status-denied-bg)', color: 'var(--status-denied)', label: 'Credencial Eliminada' },
+    FACTORY_RESET: { bg: 'var(--status-anomaly-bg)', color: 'var(--status-anomaly)', label: 'Factory Reset' },
   };
 
   const c = config[status] || { bg: '#333', color: '#fff', label: status };
@@ -179,11 +179,11 @@ export default function AdminActivityClient() {
         <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Filtrar:</span>
         {[
           { value: 'all', label: 'Todos' },
-          { value: 'USER_ADDED', label: '➕ Añadidos' },
-          { value: 'USER_REMOVED', label: '➖ Eliminados' },
-          { value: 'ADMIN_START', label: '🔐 Admin ON' },
-          { value: 'ADMIN_END', label: '🔓 Admin OFF' },
-          { value: 'FACTORY_RESET', label: '🗑️ Reset' },
+          { value: 'USER_ADDED', label: 'Añadidos' },
+          { value: 'USER_REMOVED', label: 'Eliminados' },
+          { value: 'ADMIN_START', label: 'Admin ON' },
+          { value: 'ADMIN_END', label: 'Admin OFF' },
+          { value: 'FACTORY_RESET', label: 'Reset' },
         ].map((f) => (
           <button
             key={f.value}

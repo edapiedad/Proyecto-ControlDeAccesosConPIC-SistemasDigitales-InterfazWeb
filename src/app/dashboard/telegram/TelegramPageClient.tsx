@@ -82,7 +82,7 @@ export default function TelegramUsersPage() {
         return;
       }
 
-      showSuccess('✅ Usuario de Telegram autorizado exitosamente');
+      showSuccess('Usuario de Telegram autorizado exitosamente');
       setNewTelegramId('');
       setNewName('');
       setShowForm(false);
@@ -129,7 +129,7 @@ export default function TelegramUsersPage() {
         return;
       }
 
-      showSuccess('🗑️ Usuario eliminado');
+      showSuccess('Usuario eliminado');
       await fetchUsers();
     } catch (err: unknown) {
       console.error('[Telegram Users] Exception delete:', err);

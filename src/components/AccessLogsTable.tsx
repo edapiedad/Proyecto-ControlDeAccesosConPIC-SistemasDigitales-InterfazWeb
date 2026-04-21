@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertTriangle, Lock, Unlock, PlusCircle, MinusCircle, Trash2, KeyRound, CreditCard } from 'lucide-react';
 
 // Extended type for access logs with joined user data
 interface AccessLogWithUser {
@@ -33,31 +33,22 @@ function formatTimestamp(ts: string): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const classes: Record<string, string> = {
-    GRANTED: 'badge badge-granted',
-    DENIED: 'badge badge-denied',
-    ANOMALY: 'badge badge-anomaly',
-    ADMIN_START: 'badge badge-admin',
-    ADMIN_END: 'badge badge-admin',
-    USER_ADDED: 'badge badge-granted',
-    USER_REMOVED: 'badge badge-denied',
-    FACTORY_RESET: 'badge badge-anomaly',
+  const config: Record<string, { cls: string; icon: React.ReactNode; label: string }> = {
+    GRANTED: { cls: 'badge badge-granted', icon: <CheckCircle size={12} />, label: 'Concedido' },
+    DENIED: { cls: 'badge badge-denied', icon: <XCircle size={12} />, label: 'Denegado' },
+    ANOMALY: { cls: 'badge badge-anomaly', icon: <AlertTriangle size={12} />, label: 'Anomalía' },
+    ADMIN_START: { cls: 'badge badge-admin', icon: <Lock size={12} />, label: 'Admin ON' },
+    ADMIN_END: { cls: 'badge badge-admin', icon: <Unlock size={12} />, label: 'Admin OFF' },
+    USER_ADDED: { cls: 'badge badge-granted', icon: <PlusCircle size={12} />, label: 'Añadido' },
+    USER_REMOVED: { cls: 'badge badge-denied', icon: <MinusCircle size={12} />, label: 'Eliminado' },
+    FACTORY_RESET: { cls: 'badge badge-anomaly', icon: <Trash2 size={12} />, label: 'Reset' },
   };
 
-  const labels: Record<string, string> = {
-    GRANTED: '✅ Concedido',
-    DENIED: '❌ Denegado',
-    ANOMALY: '⚠️ Anomalía',
-    ADMIN_START: '🔐 Admin ON',
-    ADMIN_END: '🔓 Admin OFF',
-    USER_ADDED: '➕ Añadido',
-    USER_REMOVED: '➖ Eliminado',
-    FACTORY_RESET: '🗑️ Reset',
-  };
+  const c = config[status] || { cls: 'badge', icon: null, label: status };
 
   return (
-    <span className={classes[status] || 'badge'}>
-      {labels[status] || status}
+    <span className={c.cls} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+      {c.icon} {c.label}
     </span>
   );
 }
@@ -247,7 +238,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
                     </td>
                     <td>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '0.85rem' }}>{log.rfid_tag_used.startsWith('KEY') ? '🔑' : '💳'}</span>
+                        {log.rfid_tag_used.startsWith('KEY') ? <KeyRound size={14} style={{ color: 'var(--accent-cyan)' }} /> : <CreditCard size={14} style={{ color: 'var(--status-anomaly)' }} />}
                         <code
                           style={{
                             background: 'rgba(15, 23, 42, 0.05)',
