@@ -7,7 +7,7 @@
 -- 1. Vista: Usuarios más frecuentes (Top Entrants)
 -- Cuenta los accesos físicos por usuario y los ordena.
 -- ============================================
-CREATE OR REPLACE VIEW public.view_top_users AS
+CREATE OR REPLACE VIEW public.view_top_users WITH (security_invoker = on) AS
 SELECT 
   u.id,
   u.name, 
@@ -24,7 +24,7 @@ ORDER BY total_accesses DESC;
 -- Muestra a los usuarios que tienen credencial asignada
 -- pero no registran TIENEN CERO ingresos (nunca han cruzado la puerta)
 -- ============================================
-CREATE OR REPLACE VIEW public.view_inactive_users AS
+CREATE OR REPLACE VIEW public.view_inactive_users WITH (security_invoker = on) AS
 SELECT 
   u.id, 
   u.name, 
@@ -39,7 +39,7 @@ WHERE a.id IS NULL;
 -- Analiza los registros 'GRANTED' sumando el volumen según 
 -- el momento horario del día, configurado en Hora Venezuela.
 -- ============================================
-CREATE OR REPLACE VIEW public.view_peak_hours AS
+CREATE OR REPLACE VIEW public.view_peak_hours WITH (security_invoker = on) AS
 SELECT 
   EXTRACT(HOUR FROM timestamp AT TIME ZONE 'America/Caracas') AS hour_of_day,
   COUNT(id) AS access_count

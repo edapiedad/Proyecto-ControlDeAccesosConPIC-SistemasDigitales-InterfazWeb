@@ -37,12 +37,22 @@ function StatusBadge({ status }: { status: string }) {
     GRANTED: 'badge badge-granted',
     DENIED: 'badge badge-denied',
     ANOMALY: 'badge badge-anomaly',
+    ADMIN_START: 'badge badge-admin',
+    ADMIN_END: 'badge badge-admin',
+    USER_ADDED: 'badge badge-granted',
+    USER_REMOVED: 'badge badge-denied',
+    FACTORY_RESET: 'badge badge-anomaly',
   };
 
   const labels: Record<string, string> = {
     GRANTED: '✅ Concedido',
     DENIED: '❌ Denegado',
     ANOMALY: '⚠️ Anomalía',
+    ADMIN_START: '🔐 Admin ON',
+    ADMIN_END: '🔓 Admin OFF',
+    USER_ADDED: '➕ Añadido',
+    USER_REMOVED: '➖ Eliminado',
+    FACTORY_RESET: '🗑️ Reset',
   };
 
   return (
@@ -306,6 +316,7 @@ export default function AccessLogsTable({ initialLogs }: AccessLogsTableProps) {
         .badge-granted { background: var(--status-granted-bg); color: var(--status-granted); }
         .badge-denied { background: var(--status-denied-bg); color: var(--status-denied); }
         .badge-anomaly { background: var(--status-anomaly-bg); color: var(--status-anomaly); }
+        .badge-admin { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
         .new-row { background: rgba(6, 182, 212, 0.1) !important; }
         .dark .new-row { background: rgba(6, 182, 212, 0.15) !important; }
       `}</style>

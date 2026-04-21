@@ -31,7 +31,15 @@ Tablas disponibles en la base de datos:
    - user_id: UUID (referencia a users.id, nullable para intentos fallidos)
    - rfid_tag_used: VARCHAR (tag RFID usado en el intento)
    - timestamp: TIMESTAMPTZ (fecha y hora del intento de acceso)
-   - status: VARCHAR ('GRANTED' = acceso concedido, 'DENIED' = acceso denegado, 'ANOMALY' = anomalía detectada)
+   - status: VARCHAR — Valores posibles:
+     * 'GRANTED' = acceso concedido en modo normal
+     * 'DENIED' = acceso denegado en modo normal
+     * 'ANOMALY' = anomalía horaria detectada por IA
+     * 'ADMIN_START' = se activó modo administrador (tarjeta maestra)
+     * 'ADMIN_END' = se desactivó modo administrador
+     * 'USER_ADDED' = nueva credencial registrada en el hardware
+     * 'USER_REMOVED' = credencial eliminada del hardware
+     * 'FACTORY_RESET' = borrado total de memoria del hardware
 
 3. "view_top_users" — Vista Analítica de Asiduidad
    - Sirve para responder: "¿Quién entra más veces?", "Top usuarios"
