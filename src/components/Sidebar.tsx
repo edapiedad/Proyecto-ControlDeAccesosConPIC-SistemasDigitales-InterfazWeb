@@ -30,6 +30,11 @@ const navItems = [
     icon: Users,
   },
   {
+    href: '/dashboard/admin-activity',
+    label: 'Actividad Admin',
+    icon: ShieldAlert,
+  },
+  {
     href: '/dashboard/telegram',
     label: 'Usuarios Telegram',
     icon: MessageSquare,

@@ -63,7 +63,8 @@ export async function generateJSON<T>(
 ): Promise<T | null> {
   const ai = getAI();
 
-  const timeoutId = setTimeout(() => {}, TIMEOUT_MS);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
     const contentsObj: any[] = [{ text: prompt }];
@@ -89,9 +90,21 @@ export async function generateJSON<T>(
     const text = response.text ?? '';
     // Clean markdown code blocks if present
     const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    if (!cleanedText) {
+      console.error('[Gemini] Empty response from model');
+      return null;
+    }
+
     return JSON.parse(cleanedText) as T;
-  } catch (error) {
-    console.error('[Gemini] Error generating JSON:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[Gemini] JSON request timed out after', TIMEOUT_MS, 'ms');
+    } else if (error instanceof SyntaxError) {
+      console.error('[Gemini] Failed to parse JSON response — model returned invalid JSON');
+    } else {
+      console.error('[Gemini] Error generating JSON:', error);
+    }
     return null;
   } finally {
     clearTimeout(timeoutId);

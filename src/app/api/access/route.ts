@@ -8,24 +8,106 @@ export const dynamic = 'force-dynamic';
 
 // Todos los estatus válidos que acepta nuestro sistema (alineados con el PIC18F45K50)
 const VALID_STATUSES: AccessStatus[] = [
-  'GRANTED',       // PIC: "ACCESO CONCEDIDO" — Tarjeta/clave válida en modo normal
-  'DENIED',        // PIC: "ACCESO DENEGADO" — Tarjeta/clave NO encontrada
-  'ANOMALY',       // IA: Acceso fuera de horario o patrón estadístico raro
-  'ADMIN_START',   // PIC: ">> ADMIN: ON" — Se activó modo administrador con tarjeta maestra
-  'ADMIN_END',     // PIC: ">> ADMIN: OFF" — Se desactivó modo administrador
-  'USER_ADDED',    // PIC: "AGREGANDO..." — Nueva tarjeta/clave registrada en EEPROM
-  'USER_REMOVED',  // PIC: "ELIMINANDO..." — Tarjeta/clave borrada de EEPROM
-  'FACTORY_RESET', // PIC: "!!! FACTORY RESET !!!" — Memoria borrada (clave D311 en admin)
+  'GRANTED',       // PIC: "ACCESO CONCEDIDO"
+  'DENIED',        // PIC: "ACCESO DENEGADO"
+  'ANOMALY',       // IA: Acceso fuera de horario
+  'ADMIN_START',   // PIC: ">> ADMIN: ON"
+  'ADMIN_END',     // PIC: ">> ADMIN: OFF"
+  'USER_ADDED',    // PIC: "AGREGANDO..."
+  'USER_REMOVED',  // PIC: "ELIMINANDO..."
+  'FACTORY_RESET', // PIC: "!!! FACTORY RESET !!!"
 ];
+
+/**
+ * Reconcilia logs huérfanos: busca registros con el mismo rfid_tag pero sin user_id
+ * y los vincula al usuario correcto.
+ */
+async function reconcileOrphanedLogs(userId: string, credential: string): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin
+      .from('access_logs')
+      .update({ user_id: userId })
+      .eq('rfid_tag_used', credential)
+      .is('user_id', null);
+
+    if (error) {
+      console.error('[Access API] Orphan reconciliation error:', error);
+    }
+  } catch (err) {
+    console.error('[Access API] Unexpected reconciliation error:', err);
+  }
+}
+
+/**
+ * Busca o crea un usuario para una credencial dada.
+ * Retorna el usuario encontrado/creado o null.
+ */
+async function findOrCreateUser(credential: string, shouldCreate: boolean) {
+  // Buscar usuario existente
+  const { data: existingUser, error: lookupError } = await supabaseAdmin
+    .from('users')
+    .select('id, name, role')
+    .eq('rfid_tag', credential)
+    .maybeSingle();
+
+  if (lookupError) {
+    console.error('[Access API] User lookup error:', lookupError);
+    return null;
+  }
+
+  if (existingUser) return existingUser;
+
+  // Si no existe y debemos crearlo
+  if (shouldCreate) {
+    const shortCred = credential.length > 4 ? credential.slice(-4) : credential;
+    const { data: newUser, error: insertError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        name: `Usuario Desconocido (*${shortCred})`,
+        rfid_tag: credential,
+        role: 'user'
+      })
+      .select('id, name, role')
+      .single();
+
+    if (insertError) {
+      // Si falla por UNIQUE constraint (otro request ya lo creó), intentar buscar de nuevo
+      if (insertError.code === '23505') {
+        const { data: retryUser } = await supabaseAdmin
+          .from('users')
+          .select('id, name, role')
+          .eq('rfid_tag', credential)
+          .maybeSingle();
+        return retryUser;
+      }
+      console.error('[Access API] Failed to auto-register user:', insertError);
+      return null;
+    }
+
+    // Reconciliar logs huérfanos anteriores con este nuevo usuario
+    if (newUser) {
+      await reconcileOrphanedLogs(newUser.id, credential);
+    }
+
+    return newUser;
+  }
+
+  return null;
+}
 
 /**
  * POST /api/access
  * Recibe credenciales y eventos del PIC18F45K50 vía ESP32.
  * Soporta: accesos normales, eventos admin, alta/baja de usuarios y factory reset.
+ * 
+ * Body esperado:
+ *   credential | rfid_tag: string (RFID tag o código de teclado)
+ *   status: string (GRANTED, DENIED, ADMIN_START, etc.)
+ *   timestamp?: string (ISO 8601, opcional — para eventos diferidos cuando ESP32 estuvo sin internet)
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Validar la Llave de la API
+    // 1. Validar API Key
     const apiKey = request.headers.get('x-api-key');
     const expectedKey = process.env.ESP32_API_KEY;
 
@@ -33,52 +115,37 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Parsear el cuerpo de la petición
-    let body: { rfid_tag?: string; credential?: string; status?: string };
+    // 2. Parsear body
+    let body: { rfid_tag?: string; credential?: string; status?: string; timestamp?: string };
     try {
       body = await request.json();
     } catch {
       return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    // Aceptamos "rfid_tag" o "credential" (teclado matricial y tarjetas RFID)
     const credential = (body.credential?.trim() || body.rfid_tag?.trim())?.toUpperCase();
     if (!credential) {
       return Response.json(
-        { error: 'Missing or invalid credential (rfid_tag or credential required)' },
+        { error: 'Missing or invalid credential' },
         { status: 400 }
       );
     }
 
-    // Validar el estatus contra la lista blanca
+    // Validar status contra lista blanca
     const rawStatus = body.status?.trim().toUpperCase() as AccessStatus;
     const accessStatus: AccessStatus = VALID_STATUSES.includes(rawStatus) ? rawStatus : 'DENIED';
 
-    const now = new Date().toISOString();
+    // Usar timestamp del ESP32 si viene (para eventos diferidos), sino usar hora actual del servidor
+    const eventTimestamp = body.timestamp || new Date().toISOString();
 
     // ================================================================
-    // RUTA A: Eventos Administrativos del PIC (no son accesos físicos)
+    // RUTA A: Eventos Administrativos del PIC
     // ================================================================
     if (['ADMIN_START', 'ADMIN_END', 'USER_ADDED', 'USER_REMOVED', 'FACTORY_RESET'].includes(accessStatus)) {
-      
-      // Para USER_ADDED: auto-registrar la credencial nueva en la tabla users
-      if (accessStatus === 'USER_ADDED') {
-        const { data: existingUser } = await supabaseAdmin
-          .from('users')
-          .select('id')
-          .eq('rfid_tag', credential)
-          .maybeSingle();
 
-        if (!existingUser) {
-          const shortCred = credential.length > 4 ? credential.slice(-4) : credential;
-          await supabaseAdmin
-            .from('users')
-            .insert({
-              name: `Usuario Nuevo (*${shortCred})`,
-              rfid_tag: credential,
-              role: 'user'
-            });
-        }
+      // USER_ADDED: registrar la credencial nueva en la tabla users
+      if (accessStatus === 'USER_ADDED') {
+        await findOrCreateUser(credential, true);
       }
 
       // Registrar el evento administrativo en la bitácora
@@ -87,7 +154,7 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: null,
           rfid_tag_used: credential,
-          timestamp: now,
+          timestamp: eventTimestamp,
           status: accessStatus,
         });
 
@@ -98,8 +165,8 @@ export async function POST(request: NextRequest) {
 
       return Response.json({
         status: accessStatus,
-        message: `Evento administrativo "${accessStatus}" registrado correctamente`,
-        timestamp: now,
+        message: `Evento "${accessStatus}" registrado`,
+        timestamp: eventTimestamp,
         logged: true
       }, { status: 200 });
     }
@@ -108,45 +175,16 @@ export async function POST(request: NextRequest) {
     // RUTA B: Accesos Normales (GRANTED / DENIED)
     // ================================================================
 
-    // 3. Buscar la credencial en la base de datos de usuarios físicos
-    let { data: user, error: lookupError } = await supabaseAdmin
-      .from('users')
-      .select('id, name, role')
-      .eq('rfid_tag', credential)
-      .maybeSingle();
+    // Para GRANTED: buscar o crear usuario. Para DENIED: solo buscar.
+    const user = await findOrCreateUser(credential, accessStatus === 'GRANTED');
 
-    if (lookupError) {
-      console.error('[Access API] User lookup error:', lookupError);
-      return Response.json({ error: 'Database error' }, { status: 500 });
-    }
-
-    // 4. AUTO-CAPTURA: Si el PIC dice GRANTED pero no conocemos esa credencial
-    if (!user && accessStatus === 'GRANTED') {
-      const shortCred = credential.length > 4 ? credential.slice(-4) : credential;
-      const { data: newUser, error: insertUserError } = await supabaseAdmin
-        .from('users')
-        .insert({
-          name: `Usuario Desconocido (*${shortCred})`,
-          rfid_tag: credential,
-          role: 'user'
-        })
-        .select('id, name, role')
-        .single();
-        
-      if (insertUserError) {
-        console.error('[Access API] Failed to capture new unknown user:', insertUserError);
-      } else {
-        user = newUser;
-      }
-    }
-
-    // 5. Insertar la bitácora del acceso
+    // Insertar log de acceso
     const { data: logEntry, error: insertLogError } = await supabaseAdmin
       .from('access_logs')
       .insert({
         user_id: user?.id ?? null,
         rfid_tag_used: credential,
-        timestamp: now,
+        timestamp: eventTimestamp,
         status: accessStatus,
       })
       .select('id')
@@ -157,24 +195,23 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Failed to log access' }, { status: 500 });
     }
 
-    // 6. Lanzar análisis IA en segundo plano (solo para accesos GRANTED con usuario conocido)
-    if (logEntry) {
-      if (user && accessStatus === 'GRANTED') {
-        detectTimeAnomaly(logEntry.id, user.id, user.name, now).catch((err) =>
-          console.error('[Access API] Anomaly detection error:', err)
-        );
-      }
+    // Análisis IA en segundo plano (solo para GRANTED con usuario conocido)
+    if (logEntry && user && accessStatus === 'GRANTED') {
+      detectTimeAnomaly(logEntry.id, user.id, user.name, eventTimestamp).catch((err) =>
+        console.error('[Access API] Anomaly detection error:', err)
+      );
+    }
 
-      analyzeCoOccurrence(credential, accessStatus, now).catch((err) =>
+    if (logEntry) {
+      analyzeCoOccurrence(credential, accessStatus, eventTimestamp).catch((err) =>
         console.error('[Access API] Co-occurrence analysis error:', err)
       );
     }
 
-    // 7. Retornar respuesta al ESP32/PIC
     return Response.json({
       status: accessStatus,
       user_name: user?.name ?? 'Desconocido',
-      timestamp: now,
+      timestamp: eventTimestamp,
       logged: true
     }, { status: 200 });
 

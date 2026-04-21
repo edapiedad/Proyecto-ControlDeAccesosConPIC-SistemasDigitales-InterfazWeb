@@ -80,6 +80,13 @@ export default function UsersPage() {
         throw new Error(error.message);
       }
 
+      // Reconciliar logs huérfanos: vincular registros con el mismo rfid_tag pero sin user_id
+      await supabase
+        .from('access_logs')
+        .update({ user_id: editingUser.id })
+        .eq('rfid_tag_used', data.rfid_tag)
+        .is('user_id', null);
+
       showSuccess('✅ Usuario actualizado exitosamente');
       setEditingUser(null);
       await fetchUsers();

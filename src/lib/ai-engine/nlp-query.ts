@@ -67,31 +67,48 @@ Notas:
  */
 export async function processNLPQuery(userMessage: string, audioBase64?: string): Promise<string> {
   try {
-    // Step 1: Convert natural language or audio to structured query intent
-    const systemPrompt = `Eres un asistente que convierte peticiones (ya sea en texto o deduciéndolas del audio adjunto) a consultas estructuradas para una base de datos de control de acceso IoT.
+    const todayISO = new Date().toISOString().split('T')[0];
+    const systemPrompt = `Eres un asistente que convierte peticiones en español (texto o audio) a un JSON de consulta para una base de datos de control de acceso IoT.
 
 ${SCHEMA_DESCRIPTION}
 
-Responde SIEMPRE con un JSON válido con esta estructura:
-{
-  "table": "access_logs" | "users" | "view_top_users" | "view_inactive_users" | "view_peak_hours",
-  "filters": [
-    { "column": "nombre_columna", "operator": "eq|neq|gt|gte|lt|lte|like|ilike", "value": "valor" }
-  ],
-  "select": "columnas separadas por coma (opcional)",
-  "order_by": "columna para ordenar (opcional)",
-  "order_direction": "asc" | "desc" (opcional),
-  "limit": número máximo de resultados (opcional, default 20),
-  "join_users": true si necesitas unir con la tabla users (solo para access_logs)
-}
+Tu respuesta DEBE ser ÚNICAMENTE un objeto JSON con esta estructura (sin markdown, sin explicaciones, sin backticks):
+{"table":"...", "filters":[...], "select":"...", "order_by":"...", "order_direction":"...", "limit":20, "join_users":true}
 
-Reglas IMPORTANTES y Estrictas:
-1. SIEMPRE debes responder ÚNICA y EXCLUSIVAMENTE con el JSON. Sin markdown, sin explicaciones. Solo el objeto {}.
-2. Para "hoy", el timestamp de inicio es ${new Date().toISOString().split('T')[0]}T00:00:00Z. Usa el operador 'gte' sobre access_logs.
-3. Consultas de "Cuántos" (Conteo de eventos): Pide una consulta normal limitada a 50 (table: access_logs) y tú mismo contarás las filas.
-4. Consultas estadísticas transversales (Preguntas de "Quién entra más", "Usuarios que nunca entran", "Horas Pico"): ¡UTILIZA OBLIGATORIAMENTE LAS VISTAS ANALÍTICAS (view_)!
-5. Si no sabes qué consultar, genera un JSON vacío (vacío pero válido).
+EJEMPLOS de consultas correctas:
+
+Pregunta: "¿Quién entró hoy?"
+{"table":"access_logs","filters":[{"column":"timestamp","operator":"gte","value":"${todayISO}T00:00:00Z"},{"column":"status","operator":"eq","value":"GRANTED"}],"join_users":true,"limit":50}
+
+Pregunta: "Lista todos los usuarios"
+{"table":"users","filters":[],"limit":50}
+
+Pregunta: "¿Cuántos accesos hubo hoy?"
+{"table":"access_logs","filters":[{"column":"timestamp","operator":"gte","value":"${todayISO}T00:00:00Z"}],"join_users":true,"limit":50}
+
+Pregunta: "¿Quién entra más?"
+{"table":"view_top_users","filters":[],"limit":10}
+
+Pregunta: "¿A qué hora hay más tráfico?"
+{"table":"view_peak_hours","filters":[],"limit":24}
+
+Pregunta: "¿Quién no ha venido nunca?"
+{"table":"view_inactive_users","filters":[],"limit":50}
+
+Pregunta: "¿Se añadieron usuarios hoy?"
+{"table":"access_logs","filters":[{"column":"timestamp","operator":"gte","value":"${todayISO}T00:00:00Z"},{"column":"status","operator":"eq","value":"USER_ADDED"}],"limit":50}
+
+Pregunta: "Muestra las anomalías"
+{"table":"access_logs","filters":[{"column":"status","operator":"eq","value":"ANOMALY"}],"join_users":true,"limit":20}
+
+REGLAS:
+1. Responde SOLO con el JSON. Nada más.
+2. Para "hoy", usa gte con "${todayISO}T00:00:00Z" sobre la columna timestamp.
+3. Para conteos, trae las filas (limit 50) y el formateador contará.
+4. Para estadísticas (top, picos, inactivos), usa las vistas view_*.
+5. Si no entiendes, responde: {"table":"users","filters":[],"limit":20}
 `;
+
 
     // Si no hay texto, forzamos a que interprete la nota de voz
     const queryPrompt = userMessage || "Por favor escucha la nota de voz adjunta, deduce la consulta, y genera la estructura JSON correcta.";
