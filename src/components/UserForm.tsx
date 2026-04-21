@@ -7,6 +7,7 @@ interface UserFormProps {
   initialData?: { name: string; rfid_tag: string; role: string };
   submitLabel?: string;
   onCancel?: () => void;
+  availableTags?: string[];
 }
 
 const ROLES = ['user', 'admin', 'guardia', 'mantenimiento', 'visitante'];
@@ -16,6 +17,7 @@ export default function UserForm({
   initialData,
   submitLabel = 'Registrar Usuario',
   onCancel,
+  availableTags = [],
 }: UserFormProps) {
   const [name, setName] = useState(initialData?.name ?? '');
   const [rfidTag, setRfidTag] = useState(initialData?.rfid_tag ?? '');
@@ -37,10 +39,10 @@ export default function UserForm({
       return;
     }
 
-    // Basic RFID tag validation (alphanumeric hex)
+    // Validar RFID tag o teclado (ej: KEY:1234 o A1B2C)
     const cleanTag = rfidTag.trim().toUpperCase();
-    if (!/^[A-F0-9]{2,20}$/.test(cleanTag)) {
-      setError('El tag RFID debe ser un valor hexadecimal válido (ej: A1B2C3D4)');
+    if (!/^[A-Z0-9:*#\-_]{2,20}$/.test(cleanTag)) {
+      setError('El tag debe tener entre 2 y 20 caracteres alfanuméricos o símbolos válidos (: * #)');
       return;
     }
 
@@ -106,21 +108,29 @@ export default function UserForm({
               marginBottom: '6px',
             }}
           >
-            Tag RFID
+            Tag RFID o Clave
           </label>
           <input
             id="user-rfid"
             type="text"
             className="form-input"
-            placeholder="Ej: A1B2C3D4"
+            placeholder="Ej: A1B2C3D4 o KEY:123A"
             value={rfidTag}
             onChange={(e) => setRfidTag(e.target.value.toUpperCase())}
             disabled={isSubmitting}
             autoComplete="off"
+            list="unused-tags"
             style={{ fontFamily: 'monospace', letterSpacing: '0.05em' }}
           />
+          {availableTags.length > 0 && (
+            <datalist id="unused-tags">
+              {availableTags.map(tag => (
+                <option key={tag} value={tag}>Credencial reciente (sin registrar)</option>
+              ))}
+            </datalist>
+          )}
           <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Valor hexadecimal del tag RFID (2-20 caracteres)
+            Valor hexadecimal del tag o código de teclado (2-20 caracteres)
           </p>
         </div>
 

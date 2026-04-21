@@ -8,6 +8,7 @@ import type { User } from '@/types/database';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [orphanedTags, setOrphanedTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -27,6 +28,19 @@ export default function UsersPage() {
         console.error('[Users] Error fetching:', error);
       } else {
         setUsers(data ?? []);
+      }
+
+      // Fetch orphan tags (from access logs without users)
+      const { data: tagsData } = await supabase
+        .from('access_logs')
+        .select('rfid_tag_used')
+        .is('user_id', null)
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (tagsData) {
+        const uniqueTags = Array.from(new Set(tagsData.map(t => t.rfid_tag_used)));
+        setOrphanedTags(uniqueTags);
       }
     } catch (err: unknown) {
       console.error('[Users] Exception fetching:', err);
@@ -211,6 +225,7 @@ export default function UsersPage() {
           <UserForm
             onSubmit={handleCreate}
             onCancel={() => setShowForm(false)}
+            availableTags={orphanedTags}
           />
         </div>
       )}
@@ -236,6 +251,7 @@ export default function UsersPage() {
             initialData={editingUser}
             submitLabel="Guardar Cambios"
             onCancel={() => setEditingUser(null)}
+            availableTags={orphanedTags}
           />
         </div>
       )}
